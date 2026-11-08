@@ -17,6 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # «verificar» es el nombre del check que exigen las ramas protegidas (dev y prod):
+  # si lo cambias, actualiza también la protección de ramas en GitHub.
   verificar:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -57,3 +59,21 @@ jobs:
           if git grep -nE 'pk\.ey[A-Za-z0-9_-]{20,}|sk\.ey[A-Za-z0-9_-]{20,}|postgres(ql)?://[^ "]+:[^ "]+@' -- . ':!*.md'; then
             echo "::error::Parece haber un token o una clave en el código"; exit 1
           fi
+
+  # A prod solo se llega desde dev (de este mismo repositorio, no desde un fork con una rama
+  # llamada «dev»). GitHub no tiene esta regla en repos personales; este check la cumple.
+  origen:
+    if: github.event_name == 'pull_request' && github.base_ref == 'prod'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: El pull request a prod viene de dev
+        env:
+          RAMA: ${{ github.head_ref }}
+          REPO_ORIGEN: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [ "$RAMA" != "dev" ] || [ "$REPO_ORIGEN" != "${{ github.repository }}" ]; then
+            echo "::error::A prod solo se integra desde la rama dev de este repositorio (este PR viene de $REPO_ORIGEN:$RAMA). Abre tu PR contra dev."
+            exit 1
+          fi
+          echo "Origen correcto: $REPO_ORIGEN:$RAMA"

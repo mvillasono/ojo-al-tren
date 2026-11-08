@@ -1,0 +1,77 @@
+name: Desplegar
+
+# Publica en Vercel (producción) solo lo que llega a la rama prod, después de pasar las pruebas.
+#
+# Seguridad (el repositorio es público):
+# - Los secretos viven en el Environment «production» de GitHub, que solo acepta la rama prod:
+#   ningún otro workflow, rama ni pull request (y menos de un fork) puede leerlos.
+# - En GitHub solo se guardan VERCEL_TOKEN, VERCEL_ORG_ID y VERCEL_PROJECT_ID. Las variables del
+#   sitio (MAPBOX_TOKEN, PUBLIC_SITE_URL, DEMO) se configuran en Vercel y se bajan con «vercel pull».
+# - Vercel no despliega prod por su cuenta (vercel.json → git.deploymentEnabled.prod = false),
+#   así no hay despliegues dobles; las vistas previas de dev y de los PR siguen siendo de Vercel.
+# Si un merge a prod no dispara este workflow, revisa en Actions que «Desplegar» esté en la lista.
+# Si no está, GitHub no indexó el archivo: cualquier cambio en él (vía PR a dev) lo vuelve a indexar.
+# Mientras tanto se puede publicar a mano desde Actions → Desplegar → Run workflow (rama prod).
+on:
+  push:
+    branches: [prod]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desplegar-prod
+  cancel-in-progress: false   # nunca cortar un despliegue a medias
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm test
+
+  desplegar:
+    needs: pruebas
+    if: github.ref == 'refs/heads/prod'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: ${{ steps.publicar.outputs.url }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Faltan secretos?
+        run: |
+          for v in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!v}" ]; then echo "::error::Falta el secreto $v en el Environment «production» (ver README → Publicar)."; exit 1; fi
+          done
+
+      - name: CLI de Vercel (versión fija)
+        run: npm install --global vercel@65.8.0
+
+      - name: Bajar la configuración de producción (variables del sitio)
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Build
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+
+      - name: Publicar
+        id: publicar
+        run: |
+          url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Publicado: $url" >> "$GITHUB_STEP_SUMMARY"
