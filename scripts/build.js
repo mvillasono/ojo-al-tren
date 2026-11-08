@@ -33,6 +33,9 @@ const config = {
 };
 
 const red = JSON.parse(fs.readFileSync(path.join(RAIZ, 'data/lineas.json'), 'utf8'));
+// enlace «Colabora»: el repositorio de package.json (en un fork, apunta al fork)
+const paquete = JSON.parse(fs.readFileSync(path.join(RAIZ, 'package.json'), 'utf8'));
+const repoUrl = String((paquete.repository || {}).url || paquete.homepage || '').replace(/^git\+/, '').replace(/\.git$/, '');
 const L = Object.fromEntries(red.lineas.map(l => [l.id, l]));
 const ruta = l => `${l.de} – ${l.a}`;
 
@@ -67,7 +70,7 @@ for (const p of PAGINAS) {
   const html = plantilla
     .replaceAll('__SITE_URL__', sitio).replaceAll('__RUTA__', p.ruta === '/' ? '/' : p.ruta)
     .replaceAll('__TITULO__', esc(p.titulo)).replaceAll('__OG_TITULO__', esc(p.og)).replaceAll('__DESCRIPCION__', esc(p.descripcion))
-    .replaceAll('__H1__', esc(p.h1)).replaceAll('__INTRO__', esc(intro(p))).replace('__JSON_LD__', jsonLd(p));
+    .replaceAll('__H1__', esc(p.h1)).replaceAll('__REPO_URL__', esc(repoUrl)).replaceAll('__INTRO__', esc(intro(p))).replace('__JSON_LD__', jsonLd(p));
   const destino = path.join(DIST, p.archivo);
   fs.mkdirSync(path.dirname(destino), { recursive: true });
   fs.writeFileSync(destino, html);
