@@ -22,6 +22,12 @@ de una estación nueva o de un dato mal puesto también es colaborar.
 
 Nadie sube cambios directo a `dev` ni a `prod`: todo entra por pull request con las pruebas en verde.
 
+- Los PR hacia `dev` se integran con **Squash and merge** (cada aporte queda como un commit).
+- `prod` solo acepta PR que vengan de `dev` (el check `origen` lo verifica) y se integran con merge commit.
+- La primera vez que colaboras, el CI espera a que alguien del equipo lo apruebe: es una protección
+  de GitHub para repos públicos, no hiciste nada mal.
+- GitHub rechaza cualquier push que incluya un token o una clave (secret scanning).
+
 ## Preparar el proyecto en tu PC
 
 Requisitos: [Node.js 20+](https://nodejs.org) y, solo para regenerar las líneas, Python 3.10+.
