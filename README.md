@@ -58,11 +58,22 @@ Las dos están protegidas: todo entra por pull request con las pruebas en verde.
 
 ## Publicar (Vercel)
 
-`vercel.json` ya está listo: build `npm run build`, salida `dist/`, rama de producción `prod`.
-Variables: `MAPBOX_TOKEN` (público, restringido a tus dominios en mapbox.com), `PUBLIC_SITE_URL`
-(opcional) y `DEMO=no` en producción. El build genera una página por ruta (`/`, `/linea-1`,
-`/linea-2`) con título, descripción, canonical, Open Graph y JSON-LD, más `robots.txt`,
-`sitemap.xml` y el manifest.
+Producción se publica **desde GitHub Actions** (`.github/workflows/desplegar.yml`) cada vez que algo
+llega a `prod`, después de pasar las pruebas. Vercel solo hace las vistas previas de `dev` y de los
+pull requests (`vercel.json` → `git.deploymentEnabled.prod = false`).
+
+Configuración, una sola vez:
+
+1. En Vercel, crea el proyecto (importando el repo o con `npx vercel link`). Build `npm run build`,
+   salida `dist/`. Variables de **Production**: `MAPBOX_TOKEN` (público, restringido a tus dominios
+   en mapbox.com), `PUBLIC_SITE_URL` (p. ej. `https://ojoaltren.com`) y `DEMO=no`.
+2. Crea un token en vercel.com → Account Settings → Tokens (con fecha de vencimiento).
+3. En GitHub → Settings → Environments → **production** (solo la rama `prod` puede usarlo), agrega
+   los secretos `VERCEL_TOKEN`, `VERCEL_ORG_ID` y `VERCEL_PROJECT_ID` (los dos IDs están en
+   `.vercel/project.json` después de `npx vercel link`, o en Settings del proyecto en Vercel).
+
+El build genera una página por ruta (`/`, `/linea-1`, `/linea-2`) con título, descripción,
+canonical, Open Graph y JSON-LD, más `robots.txt`, `sitemap.xml` y el manifest.
 
 ## Datos
 
