@@ -17,6 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # «verificar» es el nombre del check que exigen las ramas protegidas (dev y prod):
+  # si lo cambias, actualiza también la protección de ramas en GitHub.
   verificar:
     runs-on: ubuntu-latest
     timeout-minutes: 10
