@@ -268,6 +268,7 @@
       <p><b>Información de usuarios, no oficial.</b> Ojo al Tren no está afiliado a Línea 1, Línea 2 ni a la ATU. Un tramo queda confirmado cuando lo reportan al menos 2 personas en los últimos 20 minutos.</p>
       <p>Trazado y estaciones: © colaboradores de OpenStreetMap (ODbL), rutas <a href="https://www.openstreetmap.org/relation/1408101" target="_blank" rel="noopener">L1</a> y <a href="https://www.openstreetmap.org/relation/16861884" target="_blank" rel="noopener">L2</a>. La Línea 2 opera entre Mercado Santa Anita y Evitamiento; el resto está en construcción.</p>
       <p>Ante una emergencia en el tren, avisa al personal de la estación o llama al 105.</p>
+      <p>Contamos las visitas de forma anónima, sin cookies ni datos personales (Vercel Web Analytics).</p>
       <p><b>Ojo al Tren es código libre.</b> ¿Sabes programar, diseñar o encontraste un error? <a href="__REPO_URL__" target="_blank" rel="noopener">Colabora en GitHub</a>.</p>
     </section>
   </div>
@@ -297,6 +298,7 @@
 </dialog>
 <div class="toast" id="toast" role="status"></div>
 
+<!--__ANALITICA__-->
 <script src="/config.js" onerror="window.OAT_CONFIG = {}"></script>
 <script type="module">
 import { ESTADOS, SIN_DATOS, REGLAS, estadoLinea, resumen, ubicarEnRed } from '/lib/estado.js';
@@ -699,12 +701,22 @@ function ubicarme(){
     btnUbic.hidden = false;
   }, {enableHighAccuracy:true, timeout:10000, maximumAge:60000});
 }
-document.querySelectorAll('[data-reportar]').forEach(b => b.addEventListener('click', async () => {
+/** Abre «¿Cómo va el tren?». Con `estacion` (enlace de un sticker: /e/gamarra) la deja elegida sin pedir la ubicación. */
+async function abrirReporte(estacion = null){
   elegido = null; ubicado = false; msg.textContent = ''; limpiarUbic(); marcarTramo(seleccion || '');
   document.querySelectorAll('[data-op]').forEach(x => x.setAttribute('aria-pressed', false)); listo(); dlg.showModal();
+  if (estacion) {
+    const l = red.lineas.find(x => x.estaciones.includes(estacion));
+    const vecinos = l.tramos.filter(t => t.desde === estacion.id || t.hasta === estacion.id);
+    mostrarUbic('estacion', `Estás en ${estacion.nombre}`, `${l.nombre} · por el código de la estación` + (vecinos.length > 1 ? ' · ¿en qué tramo?' : ''));
+    ofrecer(vecinos.length > 1 ? vecinos : [], vecinos[0].id);
+    btnUbic.hidden = false; btnUbic.textContent = 'Usar mi ubicación'; btnUbic.classList.add('re');
+    return;   // sin GPS: el reporte no recibe el peso extra de «sobre la vía»
+  }
   // si ya diste permiso de ubicación, te ubicamos sin preguntar
   try { if ((await navigator.permissions.query({name:'geolocation'})).state === 'granted') ubicarme(); } catch (_) {}
-}));
+}
+document.querySelectorAll('[data-reportar]').forEach(b => b.addEventListener('click', () => abrirReporte()));
 $('cancelar').addEventListener('click', () => dlg.close());
 btnUbic.addEventListener('click', ubicarme);
 $('form').addEventListener('submit', e => {
@@ -714,7 +726,18 @@ $('form').addEventListener('submit', e => {
 });
 function avisar(t){ const el = $('toast'); el.textContent = t; el.classList.add('ver'); clearTimeout(avisar.h); avisar.h = setTimeout(() => el.classList.remove('ver'), 3200); }
 
+/* Enlaces de los stickers.
+   /qr            → la portada (la visita queda contada como «desde un sticker»)
+   /e/<estación>  → abre el reporte con esa estación elegida: escaneas y reportas en dos toques */
+const ESTACION_URL = (location.pathname.match(/^\/e\/([a-z0-9-]+)\/?$/) || [])[1];
+const estacionSticker = ESTACION_URL && red.lineas.flatMap(l => l.estaciones).find(e => e.id.replace(/^l\d-/, '') === ESTACION_URL);
+if (estacionSticker) {
+  linea = red.lineas.find(l => l.estaciones.includes(estacionSticker));
+  seleccion = linea.tramos.find(t => t.desde === estacionSticker.id || t.hasta === estacionSticker.id).id;
+}
+
 pintar();
+if (estacionSticker) abrirReporte(estacionSticker);
 setInterval(pintar, 30_000);   // los reportes envejecen: recalcular cada 30 s
 </script>
 </body>
