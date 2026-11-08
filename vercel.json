@@ -59,5 +59,15 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/qr",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/e/:estacion",
+      "destination": "/index.html"
+    }
   ]
 }

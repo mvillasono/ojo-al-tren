@@ -32,6 +32,8 @@ const config = {
   demo: val('DEMO', 'si') !== 'no',
 };
 
+// Vercel Web Analytics (anónimo, sin cookies): solo publicado. Se activa en Vercel → proyecto → Analytics.
+const ANALITICA = !LOCAL && val('ANALYTICS', 'si') !== 'no' ? '<script defer src="/_vercel/insights/script.js"></script>' : '';
 const red = JSON.parse(fs.readFileSync(path.join(RAIZ, 'data/lineas.json'), 'utf8'));
 // enlace «Colabora»: el repositorio de package.json (en un fork, apunta al fork)
 const paquete = JSON.parse(fs.readFileSync(path.join(RAIZ, 'package.json'), 'utf8'));
@@ -70,7 +72,8 @@ for (const p of PAGINAS) {
   const html = plantilla
     .replaceAll('__SITE_URL__', sitio).replaceAll('__RUTA__', p.ruta === '/' ? '/' : p.ruta)
     .replaceAll('__TITULO__', esc(p.titulo)).replaceAll('__OG_TITULO__', esc(p.og)).replaceAll('__DESCRIPCION__', esc(p.descripcion))
-    .replaceAll('__H1__', esc(p.h1)).replaceAll('__REPO_URL__', esc(repoUrl)).replaceAll('__INTRO__', esc(intro(p))).replace('__JSON_LD__', jsonLd(p));
+    .replaceAll('__H1__', esc(p.h1)).replaceAll('__REPO_URL__', esc(repoUrl))
+    .replace('<!--__ANALITICA__-->', ANALITICA).replaceAll('__INTRO__', esc(intro(p))).replace('__JSON_LD__', jsonLd(p));
   const destino = path.join(DIST, p.archivo);
   fs.mkdirSync(path.dirname(destino), { recursive: true });
   fs.writeFileSync(destino, html);
@@ -92,6 +95,9 @@ fs.writeFileSync(path.join(DIST, 'manifest.webmanifest'), JSON.stringify({
     { src: '/assets/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
   ],
 }, null, 2));
+// rutas de los stickers (/qr, /e/<estación>) también en local: serve lee dist/serve.json
+fs.writeFileSync(path.join(DIST, 'serve.json'), JSON.stringify({ rewrites: [
+  { source: '/qr', destination: '/index.html' }, { source: '/e/:estacion', destination: '/index.html' }] }, null, 2));
 fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\n${sitio ? `Sitemap: ${sitio}/sitemap.xml\n` : ''}`);
 if (sitio) {
   const hoy = new Date().toISOString().slice(0, 10);
