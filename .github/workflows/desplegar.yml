@@ -9,6 +9,9 @@ name: Desplegar
 #   sitio (MAPBOX_TOKEN, PUBLIC_SITE_URL, DEMO) se configuran en Vercel y se bajan con «vercel pull».
 # - Vercel no despliega prod por su cuenta (vercel.json → git.deploymentEnabled.prod = false),
 #   así no hay despliegues dobles; las vistas previas de dev y de los PR siguen siendo de Vercel.
+# Si un merge a prod no dispara este workflow, revisa en Actions que «Desplegar» esté en la lista.
+# Si no está, GitHub no indexó el archivo: cualquier cambio en él (vía PR a dev) lo vuelve a indexar.
+# Mientras tanto se puede publicar a mano desde Actions → Desplegar → Run workflow (rama prod).
 on:
   push:
     branches: [prod]
