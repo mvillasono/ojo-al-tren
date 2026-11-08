@@ -1,0 +1,30 @@
+name: Cambio en la línea
+description: Abrió una estación, cambió un nombre o el trazado no coincide con la realidad.
+title: "[Línea] "
+labels: ["datos"]
+body:
+  - type: dropdown
+    id: linea
+    attributes:
+      label: Línea
+      options: [Línea 1, Línea 2, Otra]
+    validations:
+      required: true
+  - type: textarea
+    id: cambio
+    attributes:
+      label: ¿Qué cambió o qué está mal?
+      placeholder: Por ejemplo, «Desde el 15 de diciembre funciona la estación Vista Alegre».
+    validations:
+      required: true
+  - type: input
+    id: fuente
+    attributes:
+      label: Fuente
+      description: Enlace a la noticia, al comunicado oficial o a la foto que lo muestra.
+  - type: checkboxes
+    id: osm
+    attributes:
+      label: OpenStreetMap
+      options:
+        - label: Ya lo corregí en OpenStreetMap (o sé que allá está bien).

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Reportar una vulnerabilidad (en privado)
+    url: https://github.com/mvillasono/ojo-al-tren/security/advisories/new
+    about: No abras un issue público para problemas de seguridad.
+  - name: Corregir el trazado o una estación en OpenStreetMap
+    url: https://www.openstreetmap.org/relation/1408101
+    about: Los datos de las líneas vienen de OpenStreetMap; corregirlos allá ayuda a todos.

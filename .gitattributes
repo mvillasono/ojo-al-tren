@@ -1,0 +1,5 @@
+# Finales de línea iguales en Windows, Mac y Linux (evita diffs falsos entre colaboradores)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary

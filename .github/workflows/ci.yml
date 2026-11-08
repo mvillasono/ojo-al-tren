@@ -1,0 +1,59 @@
+name: Verificar
+
+# Corre en cada pull request y en cada push a dev y prod.
+# No usa secretos: los PR que vienen de forks se prueban igual, sin acceso a claves.
+on:
+  pull_request:
+    branches: [dev, prod]
+  push:
+    branches: [dev, prod]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Pruebas de la lógica (consenso, caducidad, ubicación)
+        run: npm test
+
+      - name: Sintaxis de JavaScript y Python
+        run: |
+          for f in lib/*.js scripts/*.js tests/*.js; do node --check "$f"; done
+          python -m py_compile scripts/*.py
+
+      - name: JSON válidos
+        run: |
+          for f in data/lineas.json package.json vercel.json; do
+            python -c "import json,sys; json.load(open(sys.argv[1], encoding='utf-8'))" "$f"
+          done
+
+      - name: Build (igual que en Vercel)
+        run: npm run build
+        env:
+          PUBLIC_SITE_URL: https://ojo-al-tren.example
+          DEMO: "si"
+
+      - name: Que no se cuele ningún secreto
+        run: |
+          if git ls-files | grep -E '(^|/)\.env$'; then echo "::error::Hay un archivo .env en el repositorio"; exit 1; fi
+          if git grep -nE 'pk\.ey[A-Za-z0-9_-]{20,}|sk\.ey[A-Za-z0-9_-]{20,}|postgres(ql)?://[^ "]+:[^ "]+@' -- . ':!*.md'; then
+            echo "::error::Parece haber un token o una clave en el código"; exit 1
+          fi

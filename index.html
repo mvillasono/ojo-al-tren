@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="es-PE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>__TITULO__</title>
+<meta name="description" content="__DESCRIPCION__">
+<link rel="canonical" href="__SITE_URL____RUTA__">
+<meta name="theme-color" content="#0A0A0B">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="Ojo al Tren">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- Vista previa al compartir (WhatsApp, Facebook, X) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ojo al Tren">
+<meta property="og:locale" content="es_PE">
+<meta property="og:url" content="__SITE_URL____RUTA__">
+<meta property="og:title" content="__OG_TITULO__">
+<meta property="og:description" content="__DESCRIPCION__">
+<meta property="og:image" content="__SITE_URL__/assets/og-image.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mapa de las Líneas 1 y 2 del Metro de Lima con un tramo detenido en rojo, junto al nombre Ojo al Tren.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="__OG_TITULO__">
+<meta name="twitter:description" content="__DESCRIPCION__">
+<meta name="twitter:image" content="__SITE_URL__/assets/og-image.jpg">
+<meta name="twitter:image:alt" content="Mapa de las Líneas 1 y 2 del Metro de Lima con un tramo detenido en rojo, junto al nombre Ojo al Tren.">
+
+<!-- Datos estructurados -->
+<script type="application/ld+json">__JSON_LD__</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Ojo al Tren — monocromo con hairlines; el color solo aparece cuando hay algo que mirar.
+     Normal = blanco luminoso, lento = ámbar, detenido = coral, sin servicio = acero, sin reportes = grafito. */
+  :root{
+    --fondo:#0A0A0B; --panel:#0D0D0F; --sup:#151518; --sup-2:#1C1C20;
+    --linea:rgba(255,255,255,.08); --linea-2:rgba(255,255,255,.14);
+    --texto:#F2F2F2; --tenue:#8E8E93; --apagado:#5C5C63;
+    --normal:#EDEDED; --lento:#F5B83D; --detenido:#FF4D4F; --sin_servicio:#7C7C85; --sin:#2E2E33;
+    --ancho:380px; --barra:56px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--fondo);color:var(--texto);
+    font-family:Geist,system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+  button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+  a{color:inherit}
+  :focus-visible{outline:2px solid var(--texto);outline-offset:2px}
+  .sr{position:absolute!important;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  .mono{font-family:"Geist Mono",ui-monospace,Consolas,monospace;font-size:10.5px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:var(--tenue)}
+
+  /* ---------- encabezado en celdas ---------- */
+  .barra{position:fixed;top:0;left:0;right:0;z-index:7;display:flex;align-items:stretch;height:calc(var(--barra) + env(safe-area-inset-top));
+    padding-top:env(safe-area-inset-top);background:var(--fondo);border-bottom:1px solid var(--linea)}
+  .barra .celda{display:flex;align-items:center;gap:14px;padding:0 18px;border-right:1px solid var(--linea)}
+  .barra .esp{flex:1}
+  .barra .celda.inv{border-right:0;border-left:1px solid var(--linea);background:var(--texto);color:var(--fondo);
+    font-family:"Geist Mono",monospace;font-size:12px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;padding:0 22px}
+  .barra .celda.inv:hover{background:#fff}
+  .logo-txt{font-weight:800;font-size:19px;line-height:1;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:transparent;
+    background:repeating-linear-gradient(90deg,var(--texto) 0 1.3px,transparent 1.3px 2.6px);-webkit-background-clip:text;background-clip:text}
+  @media (max-width:520px){.barra .lema{display:none}}
+
+  #map{position:fixed;left:0;right:0;top:calc(var(--barra) + env(safe-area-inset-top));bottom:0;background:var(--fondo)}
+
+  /* ---------- panel: hoja inferior en el móvil, columna a la izquierda en la web ---------- */
+  .panel{position:fixed;z-index:6;left:0;right:0;bottom:0;display:flex;flex-direction:column;overflow:hidden;
+    background:var(--panel);border-top:1px solid var(--linea);height:var(--h);transition:height .32s cubic-bezier(.2,.8,.2,1)}
+  .panel[data-estado=cerrado]{--h:calc(68px + env(safe-area-inset-bottom))}
+  .panel[data-estado=abierto]{--h:calc(100% - var(--barra) - env(safe-area-inset-top) - 150px)}
+  .panel[data-estado=cerrado] .cuerpo{display:none}
+  .cuerpo{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+  .sec{padding:20px 20px 22px;border-bottom:1px solid var(--linea)}
+  .sec:last-child{border-bottom:0}
+  .sec-cab{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 14px}
+
+  /* barra inferior (móvil): punto + cifra grande + texto + acción */
+  .resumen{order:2;position:relative;flex:0 0 auto;display:flex;align-items:center;gap:14px;width:100%;
+    min-height:calc(68px + env(safe-area-inset-bottom));padding:0 18px env(safe-area-inset-bottom);background:var(--fondo);touch-action:none}
+  .resumen::before{content:"";position:absolute;top:6px;left:50%;width:36px;height:3px;margin-left:-18px;border-radius:2px;background:var(--linea-2)}
+  .panel[data-estado=abierto] .resumen{border-top:1px solid var(--linea)}
+  .resumen .num{font-size:30px;font-weight:600;letter-spacing:-.03em;line-height:1}
+  .resumen .txt{flex:1;min-width:0;font-size:13.5px;color:var(--tenue);line-height:1.3}
+  .resumen .txt b{display:block;color:var(--texto);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .resumen .txt span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  @media (min-width:900px){
+    .panel{top:calc(var(--barra) + env(safe-area-inset-top));right:auto;width:var(--ancho);height:auto;border-top:0;border-right:1px solid var(--linea)}
+    .panel[data-estado] .cuerpo{display:block}
+    .resumen{display:none}
+    #map{left:var(--ancho)}
+  }
+
+  /* ---------- selector de línea ---------- */
+  .sec-lineas{padding:14px 20px}
+  .lineas{display:grid;grid-template-columns:1fr;gap:6px}
+  .linea-btn{display:grid;grid-template-columns:34px 1fr auto;gap:0 12px;align-items:center;width:100%;padding:9px 12px;
+    border:1px solid var(--linea-2);border-radius:2px}
+  .linea-btn .cod{font-size:20px;font-weight:600;letter-spacing:-.02em}
+  .linea-btn .ruta{font-size:13px;color:var(--tenue);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .linea-btn .est-l{display:flex;align-items:center;gap:6px;font-family:"Geist Mono",monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase}
+  .linea-btn .est-l .punto{width:6px;height:6px}
+  .linea-btn[aria-pressed=true]{background:var(--texto);color:var(--fondo);border-color:var(--texto)}
+  .linea-btn[aria-pressed=true] .ruta{color:#4A4A50}
+  .linea-btn[aria-pressed=true] .punto{box-shadow:0 0 0 1.5px var(--fondo)}
+
+  /* ---------- punto de estado ---------- */
+  .punto{flex:0 0 auto;display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c,var(--apagado))}
+  [data-alerta] .punto,.punto[data-alerta]{animation:latido 1.6s ease-out infinite}
+  @keyframes latido{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 60%,transparent)}70%{box-shadow:0 0 0 9px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  .ceja{display:flex;align-items:center;gap:10px}
+
+  /* ---------- estado principal: la cifra grande ---------- */
+  .cifra{font-size:68px;font-weight:600;line-height:.95;letter-spacing:-.045em;margin:14px 0 10px}
+  .dice{margin:0;font-size:16px;line-height:1.4;color:var(--tenue);max-width:30ch}
+  .dice b{color:var(--texto);font-weight:500}
+  .meta{margin:12px 0 0;font-family:"Geist Mono",monospace;font-size:12px;color:var(--texto)}
+  .meta .sello{display:inline-block;margin-right:8px;padding:2px 7px;border:1px solid var(--linea-2);border-radius:2px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 0}
+  .chip{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 10px;border:1px solid var(--linea-2);border-radius:2px;
+    font-family:"Geist Mono",monospace;font-size:11.5px;color:var(--texto)}
+  .chip .punto{width:6px;height:6px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--linea);margin:20px -20px -22px}
+  .stats div{padding:14px 20px 16px;border-right:1px solid var(--linea)}
+  .stats div:last-child{border-right:0}
+  .stats b{display:block;font-size:22px;font-weight:600;letter-spacing:-.02em}
+  .stats span{font-size:11.5px;color:var(--tenue);line-height:1.3;display:block}
+
+  /* ---------- botones ---------- */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 16px;border-radius:2px;
+    font-weight:500;font-size:14px;background:var(--texto);color:var(--fondo)}
+  .btn.ancho{width:100%;height:48px;font-size:15px}
+  .btn.sec{background:transparent;color:var(--texto);border:1px solid var(--linea-2)}
+  .btn:disabled{opacity:.35;cursor:default}
+  .ayuda{margin:10px 0 0;font-size:12.5px;color:var(--tenue)}
+
+  /* ---------- diagrama de la línea ---------- */
+  .diagrama{list-style:none;margin:0;padding:0}
+  .diagrama .est{display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:12px;min-height:24px}
+  .diagrama .nodo{justify-self:center;width:9px;height:9px;border-radius:50%;background:var(--texto);box-shadow:0 0 0 3px var(--panel)}
+  .diagrama .est.extremo .nodo{width:13px;height:13px;background:var(--panel);border:2.5px solid var(--texto)}
+  .diagrama .est .n{font-size:14px}
+  .diagrama .est.extremo .n{font-weight:600}
+  .diagrama .est .km{font-family:"Geist Mono",monospace;font-size:11px;color:var(--apagado)}
+  .diagrama .tramo{display:grid;grid-template-columns:20px 1fr;gap:12px;width:100%;min-height:18px;border-radius:2px}
+  .diagrama .tramo .barra-t{justify-self:center;width:3px;min-height:18px;border-radius:1px;background:var(--c,var(--sin))}
+  .diagrama .tramo[data-estado]:not([data-estado=""]) .barra-t{box-shadow:0 0 8px 0 color-mix(in srgb,var(--c) 55%,transparent)}
+  .diagrama .tramo[data-nivel=sin_confirmar] .barra-t{background:repeating-linear-gradient(180deg,var(--c) 0 4px,transparent 4px 8px);box-shadow:none}
+  .diagrama .tramo[data-estado=detenido]:not([data-nivel=sin_confirmar]) .barra-t{width:5px;animation:brillo 1.6s ease-in-out infinite}
+  @keyframes brillo{50%{box-shadow:0 0 2px 0 color-mix(in srgb,var(--detenido) 30%,transparent)}}
+  .diagrama .tramo .info{align-self:center;font-family:"Geist Mono",monospace;font-size:11.5px;color:var(--tenue);padding:4px 0}
+  .diagrama .tramo .info b{color:var(--c);font-weight:500}
+  .diagrama .tramo:hover .info,.diagrama .tramo[aria-current=true] .info{color:var(--texto)}
+  .diagrama .tramo[aria-current=true]{background:var(--sup)}
+  .leyenda{display:flex;flex-wrap:wrap;gap:8px 16px;margin:16px 0 0;font-size:12px;color:var(--tenue)}
+  .leyenda i{display:inline-block;width:16px;height:3px;border-radius:1px;margin-right:6px;vertical-align:middle;background:var(--c)}
+  .leyenda .dud{background:repeating-linear-gradient(90deg,var(--tenue) 0 4px,transparent 4px 7px)}
+
+  /* ---------- demo ---------- */
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .seg button{height:36px;padding:0 10px;border:1px solid var(--linea-2);border-radius:2px;font-size:13px;color:var(--texto)}
+  .seg button[aria-pressed=true]{background:var(--texto);color:var(--fondo);border-color:var(--texto)}
+  .reloj{display:flex;gap:6px;margin-top:10px}
+  .reloj button{flex:1;height:34px;border:1px solid var(--linea);border-radius:2px;font-family:"Geist Mono",monospace;font-size:11.5px;color:var(--tenue);text-align:center}
+  .reloj button:hover{color:var(--texto);border-color:var(--linea-2)}
+  .nota{margin:10px 0 0;font-size:12.5px;color:var(--tenue)}
+
+  .pie{font-size:12px;color:var(--tenue);line-height:1.55}
+  .pie p{margin:0 0 8px}
+  .pie b{color:var(--texto);font-weight:500}
+
+  /* ---------- reportar ---------- */
+  dialog{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;width:min(440px,calc(100% - 24px));padding:0;border:1px solid var(--linea-2);border-radius:4px;background:var(--panel);color:var(--texto)}
+  dialog::backdrop{background:rgba(0,0,0,.72);backdrop-filter:blur(2px)}
+  .dlg{padding:22px 20px}
+  .dlg h3{margin:10px 0 4px;font-size:24px;font-weight:600;letter-spacing:-.02em}
+  .dlg .sub{margin:0 0 18px;color:var(--tenue);font-size:14px}
+  .dlg select{width:100%;height:44px;padding:0 10px;background:var(--fondo);color:var(--texto);border:1px solid var(--linea-2);border-radius:2px;font:inherit}
+  .dlg .o{display:block;text-align:center;margin:10px 0;font-size:12px;color:var(--apagado)}
+  .dlg .msg{min-height:20px;margin:10px 0 14px;font-size:13px;color:var(--tenue)}
+  .ubic{margin:10px 0 0}
+  .ubic-res{display:flex;gap:10px;align-items:flex-start;margin:0 0 10px;padding:12px;border:1px solid var(--linea-2);border-radius:2px;background:var(--fondo)}
+  .ubic-res .pin{flex:0 0 auto;width:10px;height:10px;margin-top:5px;border-radius:50%;background:var(--texto);box-shadow:0 0 0 4px rgba(242,242,242,.15)}
+  .ubic-res[data-tipo=cerca] .pin{background:var(--lento);box-shadow:0 0 0 4px rgba(245,184,61,.15)}
+  .ubic-res[data-tipo=lejos] .pin,.ubic-res[data-tipo=buscando] .pin{background:var(--apagado);box-shadow:none}
+  .ubic-res[data-tipo=buscando] .pin{animation:latido 1.2s ease-out infinite;--c:var(--texto)}
+  .ubic-res b{display:block;font-weight:600;font-size:15px}
+  .ubic-res span{display:block;font-size:12.5px;color:var(--tenue);margin-top:2px}
+  .ubic .re{height:34px;border-color:transparent;font-size:13px;color:var(--tenue)}
+  .ubic .re:hover{color:var(--texto)}
+  .ubic-ops{display:grid;gap:6px;margin:0 0 10px}
+  .ubic-ops button{display:flex;justify-content:space-between;align-items:center;height:40px;padding:0 12px;border:1px solid var(--linea-2);border-radius:2px;font-size:14px}
+  .ubic-ops button small{font-family:"Geist Mono",monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--tenue)}
+  .ubic-ops button[aria-pressed=true]{background:var(--texto);color:var(--fondo);border-color:var(--texto)}
+  .ubic-ops button[aria-pressed=true] small{color:#4A4A50}
+  .opciones{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 18px}
+  .opcion{display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:2px;background:var(--fondo);border:1px solid var(--linea-2)}
+  .opcion b{font-size:15px;font-weight:600}
+  .opcion span{font-size:12px;color:var(--tenue)}
+  .opcion::before{content:"";width:18px;height:3px;border-radius:1px;background:var(--c);margin-bottom:8px;box-shadow:0 0 8px 0 color-mix(in srgb,var(--c) 50%,transparent)}
+  .opcion[aria-pressed=true]{border-color:var(--c);background:var(--sup)}
+  .dlg .acciones{display:flex;gap:6px}
+  .dlg .acciones .btn{flex:1}
+  .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:20;max-width:calc(100% - 32px);
+    padding:12px 16px;border-radius:2px;background:var(--texto);color:var(--fondo);font-weight:500;font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s}
+  .toast.ver{opacity:1}
+  @media (min-width:900px){.toast{bottom:28px;left:calc(50% + var(--ancho) / 2)}}
+
+  /* controles del mapa al tono del sitio */
+  .mapboxgl-ctrl-group,.maplibregl-ctrl-group{background:var(--panel)!important;border:1px solid var(--linea-2);border-radius:2px!important;box-shadow:none!important}
+  .mapboxgl-ctrl-group button+button,.maplibregl-ctrl-group button+button{border-top:1px solid var(--linea)!important}
+  .mapboxgl-ctrl-icon,.maplibregl-ctrl-icon{filter:invert(1)}
+  @media (max-width:899px){.mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-group,.maplibregl-ctrl-bottom-right .maplibregl-ctrl-group{display:none}}   /* en el celular se hace zoom con los dedos */
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<h1 class="sr">__H1__</h1>
+<p class="sr">__INTRO__</p>
+<noscript><p style="position:fixed;inset:auto 16px 16px;z-index:30;padding:14px;background:#151518;color:#F2F2F2;font:15px system-ui">__INTRO__ Para ver el mapa y reportar, activa JavaScript.</p></noscript>
+<header class="barra">
+  <div class="celda"><span class="logo-txt" aria-label="Ojo al Tren">Ojo al Tren</span><span class="lema mono">Metro de Lima</span></div>
+  <div class="esp"></div>
+  <button class="celda inv" data-reportar>Reportar</button>
+</header>
+<div id="map" role="application" aria-label="Mapa del Metro de Lima"></div>
+
+<aside class="panel" id="panel" data-estado="cerrado" aria-label="Estado de la línea">
+  <button class="resumen" id="resumen" aria-expanded="false" aria-controls="cuerpo"></button>
+  <div class="cuerpo" id="cuerpo">
+    <section class="sec sec-lineas"><div class="lineas" id="lineas" role="tablist" aria-label="Línea"></div></section>
+    <section class="sec" id="estado"></section>
+    <section class="sec">
+      <button class="btn ancho" data-reportar>Estoy en el tren: reportar cómo va</button>
+      <p class="ayuda">Anónimo. Tu reporte cuenta durante 20 minutos.</p>
+    </section>
+    <section class="sec">
+      <div class="sec-cab"><span class="mono" id="diag-tit">Tramo por tramo</span><span class="mono">Toca para ver</span></div>
+      <ol class="diagrama" id="diagrama"></ol>
+      <div class="leyenda" id="leyenda"></div>
+    </section>
+    <section class="sec" id="demo" hidden>
+      <div class="sec-cab"><span class="mono">Modo demo</span><span class="mono">Simulado</span></div>
+      <div class="seg" id="escenarios"></div>
+      <div class="reloj"><button data-reloj="5">+5 min</button><button data-reloj="15">+15 min</button><button data-reloj="0">Ahora</button></div>
+      <p class="nota" id="nota-reloj"></p>
+    </section>
+    <section class="sec pie">
+      <p><b>Información de usuarios, no oficial.</b> Ojo al Tren no está afiliado a Línea 1, Línea 2 ni a la ATU. Un tramo queda confirmado cuando lo reportan al menos 2 personas en los últimos 20 minutos.</p>
+      <p>Trazado y estaciones: © colaboradores de OpenStreetMap (ODbL), rutas <a href="https://www.openstreetmap.org/relation/1408101" target="_blank" rel="noopener">L1</a> y <a href="https://www.openstreetmap.org/relation/16861884" target="_blank" rel="noopener">L2</a>. La Línea 2 opera entre Mercado Santa Anita y Evitamiento; el resto está en construcción.</p>
+      <p>Ante una emergencia en el tren, avisa al personal de la estación o llama al 105.</p>
+    </section>
+  </div>
+</aside>
+
+<dialog id="dlg" aria-labelledby="dlg-tit">
+  <form method="dialog" class="dlg" id="form">
+    <span class="mono">Reportar</span>
+    <h3 id="dlg-tit">¿Cómo va el tren?</h3>
+    <p class="sub">Tu reporte es anónimo y cuenta durante 20 minutos.</p>
+    <span class="mono">¿Dónde estás?</span>
+    <div class="ubic">
+      <div class="ubic-res" id="ubic-res" aria-live="polite" hidden></div>
+      <div class="ubic-ops" id="ubic-ops" role="group" aria-label="Tramo"></div>
+      <button type="button" class="btn sec" id="ubicarme" style="width:100%">Usar mi ubicación</button>
+    </div>
+    <label class="o" for="sel-tramo">o elige el tramo a mano</label>
+    <select id="sel-tramo" required></select>
+    <p class="msg" id="msg-ubic"></p>
+    <span class="mono">¿Cómo está?</span>
+    <div class="opciones" id="opciones"></div>
+    <div class="acciones">
+      <button type="button" class="btn sec" id="cancelar">Cancelar</button>
+      <button type="submit" class="btn" id="enviar" disabled>Enviar reporte</button>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="/config.js" onerror="window.OAT_CONFIG = {}"></script>
+<script type="module">
+import { ESTADOS, SIN_DATOS, REGLAS, estadoLinea, resumen, ubicarEnRed } from '/lib/estado.js';
+
+const CFG = window.OAT_CONFIG || {};
+const MAPBOX = CFG.mapProvider === 'mapbox' && /^pk\./.test(CFG.mapboxToken || '');
+const red = await (await fetch('/data/lineas.json')).json();
+const LINEA = Object.fromEntries(red.lineas.map(l => [l.id, l]));
+const EST = Object.fromEntries(red.lineas.flatMap(l => l.estaciones.map(e => [e.id, e])));
+const TRAMO = Object.fromEntries(red.lineas.flatMap(l => l.tramos.map(t => [t.id, {...t, linea:l.id}])));
+const RUTA_LINEA = {L1:'/linea-1', L2:'/linea-2'};
+const TITULO_LINEA = {L1:'Línea 1 del Metro de Lima: ¿cómo está ahora? | Ojo al Tren', L2:'Línea 2 del Metro de Lima: ¿cómo está ahora? | Ojo al Tren'};
+// la línea que se está viendo en el panel: la de la URL (/linea-2) o la Línea 1
+let linea = red.lineas.find(l => location.pathname.replace(/\/+$/, '') === RUTA_LINEA[l.id]) || red.lineas[0];
+const $ = id => document.getElementById(id);
+const esWeb = () => matchMedia('(min-width:900px)').matches;
+
+/* ---------- reloj (el modo demo puede adelantarlo para ver cómo caducan los reportes) ---------- */
+let desfase = 0;
+const ahora = () => Date.now() + desfase;
+function haceCuanto(t){
+  const min = Math.round((ahora() - t) / 60000);
+  return min < 1 ? 'hace un momento' : `hace ${min} min`;
+}
+const plural = (n, uno, varios) => `${n.toLocaleString('es-PE')} ${n === 1 ? uno : varios}`;
+const entre = (a, b) => `entre ${EST[a].nombre} y ${EST[b].nombre}`;
+const tramoTxt = id => `${EST[TRAMO[id].desde].nombre} – ${EST[TRAMO[id].hasta].nombre}`;
+const rutaTxt = l => `${l.de} – ${l.a}`;
+const colorDe = estado => estado ? ESTADOS[estado].color : SIN_DATOS;
+const fmt = n => typeof n === 'number' ? n.toLocaleString('es-PE') : n;
+
+/* ---------- reportes: los tuyos (localStorage) + los simulados del modo demo ---------- */
+const guardar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} };
+const leer = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (_) { return d; } };
+let autor = leer('oat-autor', null);
+if (!autor) { autor = 'yo-' + Math.random().toString(36).slice(2, 10); guardar('oat-autor', autor); }
+let propios = leer('oat-reportes', []).filter(r => Date.now() - r.t < 3 * 3600_000);
+let demo = [];
+const todos = () => [...demo, ...propios];
+const vigentes = () => todos().filter(r => r.fuente !== 'oficial' && r.t <= ahora() && ahora() - r.t <= REGLAS.vigenciaMin * 60000);
+
+/* ---------- escenarios del modo demo (las dos líneas) ---------- */
+const rango = (l, a, b) => { const T = LINEA[l].tramos, i = T.findIndex(t => t.desde === a), j = T.findIndex(t => t.desde === b); return T.slice(i, j + 1).map(t => t.id); };
+const cada = (l, n, hasta = 99) => LINEA[l].tramos.filter((_, i) => i % n === 0 && i < hasta).map(t => t.id);
+function generar(tramos, estado, n, maxMin){
+  const out = [];
+  for (const t of tramos) for (let i = 0; i < n; i++)
+    out.push({tramo:t, estado, t:ahora() - Math.random() * maxMin * 60000, autor:`demo-${t}-${estado}-${i}`, ubicado:Math.random() < .5});
+  return out;
+}
+const l2Normal = () => generar(LINEA.L2.tramos.map(t => t.id), 'normal', 2, 14);
+const ESCENARIOS = {
+  normal:   {nombre:'Día normal',       gen:() => [...generar(cada('L1', 2), 'normal', 2, 15), ...l2Normal()]},
+  detenido: {nombre:'Tren detenido',    gen:() => [...generar(cada('L1', 3), 'normal', 2, 15), ...generar(rango('L1', 'l1-arriola', 'l1-gamarra'), 'detenido', 4, 8),
+                                                   ...generar([...rango('L1', 'l1-la-cultura', 'l1-la-cultura'), ...rango('L1', 'l1-miguel-grau', 'l1-miguel-grau')], 'lento', 3, 10),
+                                                   ...l2Normal()]},
+  punta:    {nombre:'Hora punta',       gen:() => [...generar(rango('L1', 'l1-atocongo', 'l1-angamos'), 'lento', 3, 12), ...generar(rango('L1', 'l1-caja-de-agua', 'l1-los-postes'), 'lento', 2, 12),
+                                                   ...generar(cada('L1', 4), 'normal', 2, 15), ...generar(rango('L2', 'l2-hermilio-valdizan', 'l2-colectora-industrial'), 'lento', 3, 10),
+                                                   ...generar(rango('L2', 'l2-ovalo-santa-anita', 'l2-ovalo-santa-anita'), 'normal', 2, 10)]},
+  oficial:  {nombre:'Aviso oficial',    gen:() => [...rango('L1', 'l1-los-jardines', 'l1-santa-rosa').map(t => ({tramo:t, estado:'sin_servicio', t:ahora() - 25 * 60000, autor:'linea1', fuente:'oficial'})),
+                                                   ...generar(cada('L1', 3, 19), 'normal', 2, 15), ...l2Normal()]},
+  dudas:    {nombre:'Reportes sueltos', gen:() => [...generar(rango('L1', 'l1-san-juan', 'l1-san-juan'), 'detenido', 1, 6), ...generar(rango('L1', 'l1-el-angel', 'l1-el-angel'), 'lento', 1, 4),
+                                                   ...generar(rango('L1', 'l1-el-angel', 'l1-el-angel'), 'normal', 1, 9), ...generar(rango('L2', 'l2-colectora-industrial', 'l2-colectora-industrial'), 'detenido', 1, 3)]},
+  vacio:    {nombre:'Sin reportes',     gen:() => []},
+};
+let escenario = CFG.demo ? 'detenido' : null;
+if (CFG.demo) {
+  $('demo').hidden = false;
+  $('escenarios').innerHTML = Object.entries(ESCENARIOS).map(([k, e]) => `<button data-esc="${k}">${e.nombre}</button>`).join('');
+  demo = ESCENARIOS[escenario].gen();
+}
+$('demo').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.esc) { escenario = b.dataset.esc; desfase = 0; demo = ESCENARIOS[escenario].gen(); seleccion = null; }
+  if (b.dataset.reloj !== undefined) desfase = +b.dataset.reloj ? desfase + +b.dataset.reloj * 60000 : 0;
+  pintar(); encuadrar();
+});
+
+/* ---------- panel ---------- */
+const panel = $('panel'), resumenEl = $('resumen');
+let seleccion = null, principal = null, ultimo = null;
+
+/** Color y texto corto del estado de una línea completa (para el selector). */
+function estadoCorto(l, est){
+  const r = resumen(l, est);
+  if (r.tipo === 'problemas') {
+    const g = [...r.grupos].sort((a, b) => ESTADOS[b.estado].orden - ESTADOS[a.estado].orden)[0];
+    return {c:ESTADOS[g.estado].color, txt:ESTADOS[g.estado].nombre, alerta:g.estado === 'detenido'};
+  }
+  return r.tipo === 'normal' ? {c:ESTADOS.normal.color, txt:'Normal'} : {c:'var(--apagado)', txt:'Sin reportes'};
+}
+function pintar(){
+  const porLinea = Object.fromEntries(red.lineas.map(l => [l.id, estadoLinea(l, todos(), ahora())]));
+  const estados = porLinea[linea.id];
+  const res = resumen(linea, estados);
+  const deLinea = new Set(linea.tramos.map(t => t.id));
+  const vigL = vigentes().filter(r => deLinea.has(r.tramo));
+  const personasVig = new Set(vigL.map(r => r.autor)).size;
+  $('lineas').innerHTML = red.lineas.map(l => { const e = estadoCorto(l, porLinea[l.id]);
+    return `<button class="linea-btn" role="tab" data-linea="${l.id}" aria-pressed="${l === linea}" aria-selected="${l === linea}">
+      <span class="cod">${l.id}</span><span class="ruta">${rutaTxt(l)}</span>
+      <span class="est-l" ${e.alerta ? 'data-alerta' : ''}><span class="punto" style="--c:${e.c}"></span>${e.txt}</span></button>`; }).join('');
+  $('diag-tit').textContent = `${linea.id} · Tramo por tramo`;
+  const conProblema = linea.tramos.filter(t => estados[t.id].estado && estados[t.id].estado !== 'normal' && estados[t.id].nivel !== 'sin_confirmar').length;
+  const normales = linea.tramos.filter(t => estados[t.id].estado === 'normal').length;
+  const dudosos = linea.tramos.filter(t => estados[t.id].nivel === 'sin_confirmar' && estados[t.id].estado !== 'normal');
+
+  // estado principal: la cifra grande
+  let c, ceja, cifra, dice, meta = '', chips = '';
+  principal = null;
+  if (res.tipo === 'problemas') {
+    const g = principal = [...res.grupos].sort((a, b) => ESTADOS[b.estado].orden - ESTADOS[a.estado].orden || b.personas - a.personas)[0];
+    const oficialSolo = g.nivel === 'oficial' && !g.personas;
+    c = ESTADOS[g.estado].color;
+    ceja = `${ESTADOS[g.estado].nombre} · ${g.nivel === 'oficial' ? 'aviso oficial' : 'confirmado'}`;
+    cifra = oficialSolo ? g.tramos.length : g.personas;
+    dice = oficialSolo
+      ? `${g.tramos.length === 1 ? 'tramo' : 'tramos'} <b>${ESTADOS[g.estado].nombre.toLowerCase()}</b> entre <b>${EST[g.desde].nombre}</b> y <b>${EST[g.hasta].nombre}</b>, según el aviso oficial`
+      : `${g.personas === 1 ? 'persona reporta' : 'personas reportan'} el tren <b>${ESTADOS[g.estado].nombre.toLowerCase()}</b> entre <b>${EST[g.desde].nombre}</b> y <b>${EST[g.hasta].nombre}</b>`;
+    meta = `<span class="sello">${g.nivel === 'oficial' ? 'Oficial' : 'Confirmado'}</span>Último reporte ${haceCuanto(g.ultimo)}`;
+    chips = res.grupos.filter(x => x !== g).map(x => `<span class="chip" style="--c:${ESTADOS[x.estado].color}"><span class="punto"></span>${ESTADOS[x.estado].nombre} · ${EST[x.desde].nombre} – ${EST[x.hasta].nombre}</span>`).join('');
+  } else if (res.tipo === 'normal') {
+    c = ESTADOS.normal.color; ceja = 'En vivo · funcionando'; cifra = personasVig;
+    dice = `${personasVig === 1 ? 'persona dice' : 'personas dicen'} que la ${linea.nombre} funciona <b>con normalidad</b>`;
+    meta = `Últimos ${REGLAS.vigenciaMin} min`;
+  } else {
+    c = 'var(--apagado)'; ceja = 'Sin reportes'; cifra = 0;
+    dice = `reportes en los últimos ${REGLAS.vigenciaMin} min. <b>¿Estás en el tren?</b> Cuéntanos cómo va.`;
+  }
+  chips += dudosos.map(t => `<span class="chip" style="--c:${ESTADOS[estados[t.id].estado].color}"><span class="punto"></span>${ESTADOS[estados[t.id].estado].nombre}? · ${EST[t.desde].nombre} – ${EST[t.hasta].nombre}</span>`).join('');
+  $('estado').innerHTML = `<div class="ceja" ${principal && principal.estado === 'detenido' ? 'data-alerta' : ''} style="--c:${c}">
+      <span class="punto"></span><span class="mono" style="color:var(--texto)">${ceja}</span></div>
+    <div class="cifra">${fmt(cifra)}</div>
+    <p class="dice">${dice}</p>${meta ? `<p class="meta">${meta}</p>` : ''}
+    ${chips ? `<div class="chips">${chips}</div>` : ''}
+    <div class="stats"><div><b>${conProblema}</b><span>tramos con problemas</span></div>
+      <div><b>${normales}</b><span>tramos normales</span></div><div><b>${vigL.length}</b><span>reportes en ${REGLAS.vigenciaMin} min</span></div></div>`;
+
+  // diagrama
+  let h = '';
+  linea.estaciones.forEach((e, i) => {
+    const ext = i === 0 || i === linea.estaciones.length - 1;
+    h += `<li class="est${ext ? ' extremo' : ''}"><span class="nodo"></span><span class="n">${e.nombre}</span><span class="km">${(e.km - linea.estaciones[0].km).toFixed(1)}</span></li>`;
+    const t = linea.tramos[i]; if (!t) return;
+    const s = estados[t.id];
+    let info = '';
+    if (s.nivel === 'oficial') info = `<b>${ESTADOS[s.estado].nombre}</b> · aviso oficial`;
+    else if (s.nivel === 'confirmado' && s.estado !== 'normal') info = `<b>${ESTADOS[s.estado].nombre}</b> · ${plural(s.personas, 'persona', 'personas')} · ${haceCuanto(s.ultimo)}`;
+    else if (s.nivel === 'sin_confirmar') info = `<b>${ESTADOS[s.estado].nombre}?</b> · sin confirmar`;
+    h += `<li><button class="tramo" data-tramo="${t.id}" data-estado="${s.estado || ''}" data-nivel="${s.nivel}" style="--c:${colorDe(s.estado)}"
+      aria-current="${seleccion === t.id}" aria-label="Tramo ${entre(t.desde, t.hasta)}: ${s.estado ? ESTADOS[s.estado].nombre : 'sin reportes'}">
+      <span class="barra-t"></span><span class="info">${info}</span></button></li>`;
+  });
+  $('diagrama').innerHTML = h;
+  document.querySelectorAll('[data-esc]').forEach(b => b.setAttribute('aria-pressed', b.dataset.esc === escenario));
+  $('nota-reloj').textContent = desfase
+    ? `Reloj adelantado ${Math.round(desfase / 60000)} min: los reportes pierden peso con el tiempo y caducan a los ${REGLAS.vigenciaMin} min.`
+    : 'Reportes simulados para ver cómo se comporta el mapa. Los tuyos sí se guardan, solo en este navegador.';
+  ultimo = {estados, c, cifra, res};
+  pintarResumen();
+  pintarMapa(porLinea);
+}
+$('leyenda').innerHTML = Object.values(ESTADOS).map(e => `<span><i style="--c:${e.color}"></i>${e.nombre}</span>`).join('')
+  + `<span><i class="dud"></i>Sin confirmar</span><span><i style="--c:${SIN_DATOS}"></i>Sin reportes</span>`;
+$('diagrama').addEventListener('click', e => { const b = e.target.closest('[data-tramo]'); if (b) elegirTramo(b.dataset.tramo); });
+$('lineas').addEventListener('click', e => { const b = e.target.closest('[data-linea]'); if (b) elegirLinea(b.dataset.linea); });
+function elegirLinea(id){ if (linea.id === id) return; linea = LINEA[id]; seleccion = null; marcarUrl(); pintar(); encuadrar(); }
+/** La URL y el título siguen a la línea elegida (enlaces para compartir: /linea-1, /linea-2). */
+function marcarUrl(){
+  if (location.pathname === '/' && linea.id === 'L1') return;   // la portada sigue siendo la portada
+  history.replaceState(null, '', RUTA_LINEA[linea.id] + location.search);
+  document.title = TITULO_LINEA[linea.id];
+}
+
+/* barra inferior (móvil): la cifra y el estado de la línea o, si hay uno elegido, el del tramo */
+function pintarResumen(){
+  if (!ultimo) return;
+  const {estados, res} = ultimo;
+  let c = ultimo.c, num = ultimo.cifra, b, s, alerta = false;
+  if (seleccion) {
+    const e = estados[seleccion];
+    c = colorDe(e.estado); num = e.personas || 0; b = `${linea.id} · ${tramoTxt(seleccion)}`;
+    s = !e.estado ? 'Sin reportes recientes' : e.nivel === 'oficial' ? `${ESTADOS[e.estado].nombre} · aviso oficial`
+      : `${ESTADOS[e.estado].nombre}${e.nivel === 'sin_confirmar' ? ' · sin confirmar' : ''} · ${haceCuanto(e.ultimo)}`;
+    alerta = e.estado === 'detenido' && e.nivel !== 'sin_confirmar';
+  } else if (res.tipo === 'problemas') {
+    const g = principal; b = `${linea.id} · ${ESTADOS[g.estado].nombre} · ${EST[g.desde].nombre} – ${EST[g.hasta].nombre}`;
+    s = g.nivel === 'oficial' && !g.personas ? 'Aviso oficial de Línea 1' : `${g.personas === 1 ? 'persona lo reporta' : 'personas lo reportan'} · ${haceCuanto(g.ultimo)}`;
+    alerta = g.estado === 'detenido';
+  } else if (res.tipo === 'normal') { b = `${linea.id} · Funcionando con normalidad`; s = `personas en los últimos ${REGLAS.vigenciaMin} min`; }
+  else { b = `${linea.id} · Sin reportes recientes`; s = '¿Estás en el tren? Cuéntanos cómo va'; }
+  resumenEl.innerHTML = `<span class="punto" ${alerta ? 'data-alerta' : ''} style="--c:${c}"></span>
+    <span class="num">${fmt(num)}</span><span class="txt"><b>${b}</b><span>${s}</span></span>
+    <span class="mono">${panel.dataset.estado === 'abierto' ? 'Cerrar' : 'Detalles'}</span>`;
+}
+function abrir(estado){
+  if (panel.dataset.estado === estado) return;
+  panel.dataset.estado = estado; resumenEl.setAttribute('aria-expanded', estado === 'abierto');
+  pintarResumen();
+  if (!esWeb()) setTimeout(encuadrar, 340);   // después de la animación de la hoja
+}
+// tocar la barra abre/cierra; deslizarla hacia arriba/abajo también
+let y0 = null, deslizo = false;
+resumenEl.addEventListener('pointerdown', e => { y0 = e.clientY; deslizo = false; });
+addEventListener('pointerup', e => {
+  if (y0 == null) return; const dy = e.clientY - y0; y0 = null;
+  if (Math.abs(dy) >= 25) { deslizo = true; abrir(dy < 0 ? 'abierto' : 'cerrado'); }
+});
+resumenEl.addEventListener('click', () => {
+  if (deslizo) { deslizo = false; return; }
+  abrir(panel.dataset.estado === 'abierto' ? 'cerrado' : 'abierto');
+});
+
+/* ---------- mapa ---------- */
+const GL = await new Promise((ok, mal) => {
+  const lib = MAPBOX ? {css:'https://api.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.css', js:'https://api.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.js', g:'mapboxgl'}
+                     : {css:'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css', js:'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js', g:'maplibregl'};
+  const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = lib.css; document.head.appendChild(l);
+  const s = document.createElement('script'); s.src = lib.js; s.onload = () => ok(window[lib.g]); s.onerror = mal; document.head.appendChild(s);
+}).catch(() => null);
+
+const cajaDe = coords => coords.reduce((b, [x, y]) => [Math.min(b[0], x), Math.min(b[1], y), Math.max(b[2], x), Math.max(b[3], y)], [180, 90, -180, -90]);
+const caja = cajaDe(red.lineas[0].tramos.flatMap(t => t.coords));
+let map = null;
+function margen(){
+  if (esWeb()) return 70;
+  // móvil: con la hoja cerrada queda la barra de 68 px abajo; abierta, solo una franja de ~150 px de mapa arriba
+  if (panel.dataset.estado === 'abierto') {
+    const alto = (map && map.getContainer().clientHeight) || innerHeight;
+    return {top:16, bottom:Math.max(40, alto - 150 + 12), left:28, right:28};
+  }
+  return {top:28, bottom:96, left:28, right:28};
+}
+/** Encuadra el tramo elegido; en el móvil con la hoja abierta, el problema principal; si no, la línea entera. */
+function encuadrar(){
+  if (!map) return;
+  const grupo = !seleccion && !esWeb() && panel.dataset.estado === 'abierto' && principal;
+  const c = seleccion ? TRAMO[seleccion].coords : grupo ? grupo.tramos.flatMap(id => TRAMO[id].coords) : linea.tramos.flatMap(t => t.coords);
+  const b = cajaDe(c);
+  map.fitBounds([[b[0], b[1]], [b[2], b[3]]], {padding:margen(), maxZoom:seleccion || grupo ? 14.5 : linea.km < 8 ? 14 : 13, duration:700});
+}
+/* Fondo minimalista: negro, calles grafito, agua apenas distinta; los nombres de barrios en gris. */
+function fondoMinimalista(){
+  const set = (id, p, v) => { try { map.setPaintProperty(id, p, v); } catch (_) {} };
+  for (const l of map.getStyle().layers) {
+    const id = l.id;
+    if (l.type === 'background') set(id, 'background-color', '#0A0A0B');
+    else if (l.type !== 'symbol' && /water/.test(id)) set(id, l.type === 'line' ? 'line-color' : 'fill-color', '#121317');
+    else if (l.type === 'fill' && /land|park|national|building|pitch|glacier|wetland/.test(id)) set(id, 'fill-color', '#0E0E10');
+    else if (l.type === 'line' && /admin|boundary/.test(id)) { set(id, 'line-color', '#2A2A30'); set(id, 'line-opacity', .6); }
+    else if (l.type === 'line' && /road|bridge|tunnel|street|motorway|trunk|rail|path/.test(id))
+      set(id, 'line-color', /motorway|trunk|primary/.test(id) ? '#26262B' : '#1B1B1F');
+    else if (l.type === 'symbol' && l.layout && l.layout['text-field']) {
+      set(id, 'text-color', '#5C5C63'); set(id, 'text-halo-color', '#0A0A0B'); set(id, 'text-halo-width', 1);
+      if (/poi|transit|airport/.test(id)) try { map.setLayoutProperty(id, 'visibility', 'none'); } catch (_) {}
+    }
+  }
+}
+if (GL) {
+  if (MAPBOX) GL.accessToken = CFG.mapboxToken;
+  map = new GL.Map({container:'map', style:MAPBOX ? (CFG.mapboxStyle || 'mapbox://styles/mapbox/dark-v11') : 'https://tiles.openfreemap.org/styles/dark',
+    bounds:[[caja[0], caja[1]], [caja[2], caja[3]]], fitBoundsOptions:{padding:margen()}, dragRotate:false, pitchWithRotate:false,
+    attributionControl:MAPBOX ? true : {compact:true}, maxZoom:16.5, minZoom:9, ...(MAPBOX ? {projection:'mercator'} : {})});
+  map.touchZoomRotate.disableRotation();
+  map.addControl(new GL.NavigationControl({showCompass:false}), 'bottom-right');
+  map.on('load', () => {
+    fondoMinimalista();
+    const fuente = MAPBOX ? ['DIN Pro Medium', 'Arial Unicode MS Regular'] : ['Noto Sans Regular'];
+    map.resize(); map.fitBounds([[caja[0], caja[1]], [caja[2], caja[3]]], {padding:margen(), duration:0});
+    map.addSource('tramos', {type:'geojson', data:{type:'FeatureCollection', features:[]}});
+    map.addSource('estaciones', {type:'geojson', data:{type:'FeatureCollection', features:red.lineas.flatMap(l => l.estaciones.map((e, i) =>
+      ({type:'Feature', properties:{nombre:e.nombre, linea:l.id, lado:(l.id === 'L2' ? i + 1 : i) % 2 ? 'right' : 'left', extremo:i === 0 || i === l.estaciones.length - 1},
+        geometry:{type:'Point', coordinates:[e.lon, e.lat]}})))}});
+    // obras: la vía en construcción, solo de contexto (no se puede reportar)
+    map.addSource('obras', {type:'geojson', data:{type:'FeatureCollection', features:(red.obras || []).map(o =>
+      ({type:'Feature', properties:{txt:'Línea 2 · en construcción'}, geometry:{type:'LineString', coordinates:o.coords}}))}});
+    map.addLayer({id:'obras', type:'line', source:'obras', layout:{'line-join':'round'},
+      paint:{'line-color':'#4A4A52', 'line-width':['interpolate', ['linear'], ['zoom'], 10, 1.6, 15, 3], 'line-dasharray':[2, 2.2], 'line-opacity':.8}});
+    map.addLayer({id:'obras-txt', type:'symbol', source:'obras', minzoom:11.5,
+      layout:{'symbol-placement':'line', 'text-field':['get','txt'], 'text-font':fuente, 'text-size':10.5, 'text-letter-spacing':.08, 'symbol-spacing':400},
+      paint:{'text-color':'#6A6A72', 'text-halo-color':'#0A0A0B', 'text-halo-width':1.4}});
+    const color = ['match', ['get','estado'], ...Object.entries(ESTADOS).flatMap(([k, e]) => [k, e.color]), SIN_DATOS];
+    const z = (a, b) => ['interpolate', ['linear'], ['zoom'], 10, a, 15, b];
+    const conDatos = ['!=', ['get','estado'], 'sin'];
+    // halo de luz bajo la vía: la vía "encendida" (blanca) es la que funciona
+    map.addLayer({id:'via-halo', type:'line', source:'tramos', filter:['all', conDatos, ['!=', ['get','nivel'], 'sin_confirmar']],
+      layout:{'line-cap':'round','line-join':'round'}, paint:{'line-color':color, 'line-width':z(12, 26), 'line-blur':z(8, 16), 'line-opacity':.28}});
+    map.addLayer({id:'via-alerta', type:'line', source:'tramos', filter:['all', ['==', ['get','estado'], 'detenido'], ['!=', ['get','nivel'], 'sin_confirmar']],
+      layout:{'line-cap':'round'}, paint:{'line-color':ESTADOS.detenido.color, 'line-width':z(22, 44), 'line-blur':z(14, 26), 'line-opacity':.5}});
+    map.addLayer({id:'via-borde', type:'line', source:'tramos', layout:{'line-cap':'round','line-join':'round'},
+      paint:{'line-color':'#0A0A0B', 'line-width':z(6.5, 13)}});
+    map.addLayer({id:'via', type:'line', source:'tramos', filter:['!=', ['get','nivel'], 'sin_confirmar'], layout:{'line-cap':'round','line-join':'round'},
+      paint:{'line-color':color, 'line-width':z(3, 6.5)}});
+    map.addLayer({id:'via-dudosa', type:'line', source:'tramos', filter:['==', ['get','nivel'], 'sin_confirmar'], layout:{'line-join':'round'},
+      paint:{'line-color':color, 'line-width':z(3, 6.5), 'line-dasharray':[1.4, 1.2]}});
+    map.addLayer({id:'via-sel', type:'line', source:'tramos', filter:['==', ['get','id'], ''], layout:{'line-cap':'round'},
+      paint:{'line-color':'#ffffff', 'line-width':z(14, 24), 'line-opacity':.14}});
+    map.addLayer({id:'est-punto', type:'circle', source:'estaciones',
+      paint:{'circle-radius':z(['case', ['get','extremo'], 4.5, 2.6], ['case', ['get','extremo'], 8, 5.5]),
+        'circle-color':['case', ['get','extremo'], '#0A0A0B', '#F2F2F2'], 'circle-stroke-color':['case', ['get','extremo'], '#F2F2F2', '#0A0A0B'],
+        'circle-stroke-width':z(1.5, 2.5)}});
+    map.addLayer({id:'est-nombre', type:'symbol', source:'estaciones',
+      layout:{'text-field':['get','nombre'], 'text-font':fuente, 'text-size':z(10.5, 13.5), 'text-letter-spacing':.02,
+        'text-anchor':['get','lado'], 'text-offset':['case', ['==', ['get','lado'], 'left'], ['literal', [0.9, 0]], ['literal', [-0.9, 0]]],
+        'text-padding':2, 'text-optional':true},
+      paint:{'text-color':'#C9C9CE', 'text-halo-color':'rgba(10,10,11,.95)', 'text-halo-width':1.6}});
+    for (const l of ['via', 'via-dudosa', 'via-halo']) {
+      map.on('click', l, e => elegirTramo(e.features[0].properties.id));
+      map.on('mouseenter', l, () => map.getCanvas().style.cursor = 'pointer');
+      map.on('mouseleave', l, () => map.getCanvas().style.cursor = '');
+    }
+    pintar();
+    // el brillo rojo de los tramos detenidos late suavemente
+    if (!matchMedia('(prefers-reduced-motion:reduce)').matches) {
+      const t0 = performance.now();
+      setInterval(() => { if (map.getLayer('via-alerta')) map.setPaintProperty('via-alerta', 'line-opacity', .25 + .3 * (0.5 + 0.5 * Math.sin((performance.now() - t0) / 260))); }, 80);
+    }
+  });
+}
+function pintarMapa(porLinea){
+  const src = map && map.getSource && map.getSource('tramos'); if (!src) return;
+  src.setData({type:'FeatureCollection', features:red.lineas.flatMap(l => l.tramos.map(t => ({type:'Feature',
+    properties:{id:t.id, estado:porLinea[l.id][t.id].estado || 'sin', nivel:porLinea[l.id][t.id].nivel}, geometry:{type:'LineString', coordinates:t.coords}})))});
+  map.setFilter('via-sel', ['==', ['get','id'], seleccion || '']);
+}
+function elegirTramo(id){
+  if (TRAMO[id].linea !== linea.id) { linea = LINEA[TRAMO[id].linea]; seleccion = id; marcarUrl(); }
+  else seleccion = seleccion === id ? null : id;
+  pintar(); encuadrar();
+}
+
+/* ---------- reportar ---------- */
+const dlg = $('dlg'), sel = $('sel-tramo'), msg = $('msg-ubic');
+let elegido = null, ubicado = false;
+sel.innerHTML = '<option value="">Elige el tramo…</option>' + red.lineas.map(l => `<optgroup label="${l.nombre} · ${rutaTxt(l)}">${
+  l.tramos.map(t => `<option value="${t.id}">${tramoTxt(t.id)}</option>`).join('')}</optgroup>`).join('');
+const DESC = {normal:'Avanza sin problemas', lento:'Demoras, avanza a ratos', detenido:'Parado más de 5 min', sin_servicio:'No pasan trenes'};
+$('opciones').innerHTML = Object.entries(ESTADOS).map(([k, e]) => `<button type="button" class="opcion" data-op="${k}" style="--c:${e.color}" aria-pressed="false"><b>${e.nombre}</b><span>${DESC[k]}</span></button>`).join('');
+const listo = () => { $('enviar').disabled = !(sel.value && elegido); };
+$('opciones').addEventListener('click', e => { const b = e.target.closest('[data-op]'); if (!b) return;
+  elegido = b.dataset.op; document.querySelectorAll('[data-op]').forEach(x => x.setAttribute('aria-pressed', x === b)); listo(); });
+/* ¿dónde estás? — con la ubicación se elige el tramo solo, usando la estación más cercana */
+const resEl = $('ubic-res'), opsEl = $('ubic-ops'), btnUbic = $('ubicarme');
+const PRECISION = {buena:300, mala:2000};   // metros (coords.accuracy del navegador)
+const metros = m => m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1).replace('.', ',')} km`;
+function mostrarUbic(tipo, titulo, detalle){
+  resEl.hidden = false; resEl.dataset.tipo = tipo;
+  resEl.innerHTML = `<i class="pin" aria-hidden="true"></i><div><b>${titulo}</b>${detalle ? `<span>${detalle}</span>` : ''}</div>`;
+}
+function marcarTramo(id){
+  sel.value = id || '';
+  opsEl.querySelectorAll('[data-t]').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === id));
+  listo();
+}
+function ofrecer(tramos, elegidoId){
+  opsEl.innerHTML = tramos.length > 1
+    ? tramos.map(t => `<button type="button" data-t="${t.id}" aria-pressed="false"><span>${tramoTxt(t.id)}</span><small>${LINEA[TRAMO[t.id].linea].id}</small></button>`).join('') : '';
+  marcarTramo(elegidoId);
+}
+function limpiarUbic(){ resEl.hidden = true; opsEl.innerHTML = ''; btnUbic.hidden = false; btnUbic.textContent = 'Usar mi ubicación'; btnUbic.classList.remove('re'); }
+opsEl.addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) marcarTramo(b.dataset.t); });
+sel.addEventListener('change', () => { ubicado = false; opsEl.querySelectorAll('[data-t]').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === sel.value)); listo(); });
+function ubicarme(){
+  if (!navigator.geolocation) { mostrarUbic('lejos', 'Tu navegador no permite usar la ubicación', 'Elige el tramo a mano.'); return; }
+  btnUbic.hidden = true; opsEl.innerHTML = '';
+  mostrarUbic('buscando', 'Buscando tu ubicación…', 'Dura unos segundos.');
+  navigator.geolocation.getCurrentPosition(p => {
+    const u = ubicarEnRed(red.lineas, [p.coords.longitude, p.coords.latitude]);
+    const lin = u.linea ? u.linea.nombre : '';
+    // precisión: en computadoras (sin GPS) la ubicación sale por Wi-Fi o IP y puede errar por kilómetros
+    const prec = Math.round(p.coords.accuracy || 0), precTxt = prec ? ` · precisión ±${metros(prec)}` : '';
+    if (prec > PRECISION.mala) {
+      ubicado = false;
+      mostrarUbic('lejos', `Tu ubicación es aproximada (±${metros(prec)})`,
+        'Tu navegador no da una ubicación precisa (pasa en computadoras sin GPS). Elige el tramo a mano o abre la página en el celular.');
+      ofrecer([], sel.value);
+    } else {
+      // con precisión regular no damos por hecho que estás sobre la vía: solo sugerimos
+      const tipo = prec > PRECISION.buena && (u.tipo === 'estacion' || u.tipo === 'via') ? 'cerca' : u.tipo;
+      ubicado = tipo === 'estacion' || tipo === 'via';
+      if (tipo === 'estacion') {
+        mostrarUbic('estacion', `Estás en ${u.estacion.nombre}`, `${lin} · ${u.metrosEstacion < 40 ? 'en la estación' : `a ${metros(u.metrosEstacion)}`}` + (u.opciones.length > 1 ? ' · ¿en qué tramo?' : ''));
+        ofrecer(u.opciones, u.tramo.id);
+      } else if (tipo === 'via') {
+        mostrarUbic('via', `Estás ${entre(u.tramo.desde, u.tramo.hasta)}`, `${lin} · a ${metros(u.metrosEstacion)} de ${u.estacion.nombre}`);
+        ofrecer([], u.tramo.id);
+      } else if (tipo === 'cerca') {
+        const ops = u.opciones.length ? u.opciones : [u.tramo];
+        const donde = prec > u.metrosEstacion ? `tu ubicación tiene un margen de ±${metros(prec)}` : `a ${metros(u.metrosEstacion)}${precTxt}`;
+        mostrarUbic('cerca', `Cerca de ${u.estacion.nombre}`, `${lin} · ${donde}. Revisa que el tramo sea el correcto.`);
+        ofrecer(ops.length > 1 ? ops : [], (u.tipo === 'via' ? u.tramo : ops[0]).id);
+      } else {
+        mostrarUbic('lejos', `Estás a ${metros(u.metrosEstacion)} del metro`, `La estación más cercana es ${u.estacion.nombre}${precTxt}. Elige el tramo a mano.`);
+        ofrecer([], '');
+      }
+    }
+    btnUbic.hidden = false; btnUbic.textContent = 'Volver a ubicarme'; btnUbic.classList.add('re');
+  }, () => {
+    mostrarUbic('lejos', 'No pudimos obtener tu ubicación', 'Revisa el permiso de ubicación o elige el tramo a mano.');
+    btnUbic.hidden = false;
+  }, {enableHighAccuracy:true, timeout:10000, maximumAge:60000});
+}
+document.querySelectorAll('[data-reportar]').forEach(b => b.addEventListener('click', async () => {
+  elegido = null; ubicado = false; msg.textContent = ''; limpiarUbic(); marcarTramo(seleccion || '');
+  document.querySelectorAll('[data-op]').forEach(x => x.setAttribute('aria-pressed', false)); listo(); dlg.showModal();
+  // si ya diste permiso de ubicación, te ubicamos sin preguntar
+  try { if ((await navigator.permissions.query({name:'geolocation'})).state === 'granted') ubicarme(); } catch (_) {}
+}));
+$('cancelar').addEventListener('click', () => dlg.close());
+btnUbic.addEventListener('click', ubicarme);
+$('form').addEventListener('submit', e => {
+  e.preventDefault(); if (!sel.value || !elegido) return;
+  propios.push({tramo:sel.value, estado:elegido, t:ahora(), autor, ubicado}); guardar('oat-reportes', propios);
+  dlg.close(); linea = LINEA[TRAMO[sel.value].linea]; seleccion = sel.value; marcarUrl(); pintar(); encuadrar(); avisar('Gracias. Tu reporte cuenta durante 20 minutos.');
+});
+function avisar(t){ const el = $('toast'); el.textContent = t; el.classList.add('ver'); clearTimeout(avisar.h); avisar.h = setTimeout(() => el.classList.remove('ver'), 3200); }
+
+pintar();
+setInterval(pintar, 30_000);   // los reportes envejecen: recalcular cada 30 s
+</script>
+</body>
+</html>

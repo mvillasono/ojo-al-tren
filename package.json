@@ -1,0 +1,34 @@
+{
+  "name": "ojo-al-tren",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Estado de las Líneas 1 y 2 del Metro de Lima, tramo por tramo, según los reportes de quienes viajan en ellas",
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mvillasono/ojo-al-tren.git"
+  },
+  "homepage": "https://github.com/mvillasono/ojo-al-tren#readme",
+  "bugs": {
+    "url": "https://github.com/mvillasono/ojo-al-tren/issues"
+  },
+  "keywords": [
+    "metro de lima",
+    "línea 1",
+    "línea 2",
+    "lima",
+    "transporte",
+    "civic-tech",
+    "openstreetmap"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "dev": "node scripts/build.js --local && npx --yes serve@14.2.4 dist -l 3001",
+    "linea": "python scripts/linea.py",
+    "test": "node --test \"tests/**/*.test.js\""
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

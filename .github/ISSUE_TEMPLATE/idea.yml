@@ -1,0 +1,19 @@
+name: Idea
+description: Una mejora o algo nuevo para Ojo al Tren.
+title: "[Idea] "
+labels: ["idea"]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: ¿Qué problema resuelve para quien viaja?
+    validations:
+      required: true
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: ¿Cómo te lo imaginas?
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: ¿Hay otras formas de resolverlo?
