@@ -63,11 +63,11 @@
   "rewrites": [
     {
       "source": "/qr",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/e/:estacion",
-      "destination": "/index.html"
+      "destination": "/"
     }
   ]
 }
