@@ -317,8 +317,8 @@ const $ = id => document.getElementById(id);
 const esWeb = () => matchMedia('(min-width:900px)').matches;
 
 /* ---------- reloj (el modo demo puede adelantarlo para ver cómo caducan los reportes) ---------- */
-let desfase = 0;
-const ahora = () => Date.now() + desfase;
+let desfase = 0, relojServidor = 0;   // relojServidor: diferencia con la hora del servidor (celulares con la hora mal)
+const ahora = () => Date.now() + relojServidor + desfase;
 function haceCuanto(t){
   const min = Math.round((ahora() - t) / 60000);
   return min < 1 ? 'hace un momento' : `hace ${min} min`;
@@ -330,14 +330,47 @@ const rutaTxt = l => `${l.de} – ${l.a}`;
 const colorDe = estado => estado ? ESTADOS[estado].color : SIN_DATOS;
 const fmt = n => typeof n === 'number' ? n.toLocaleString('es-PE') : n;
 
-/* ---------- reportes: los tuyos (localStorage) + los simulados del modo demo ---------- */
+/* ---------- reportes: los de todos (/api/reportes) + los tuyos sin enviar + los simulados del modo demo ---------- */
 const guardar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} };
 const leer = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (_) { return d; } };
 let autor = leer('oat-autor', null);
 if (!autor) { autor = 'yo-' + Math.random().toString(36).slice(2, 10); guardar('oat-autor', autor); }
-let propios = leer('oat-reportes', []).filter(r => Date.now() - r.t < 3 * 3600_000);
+if (!/^[A-Za-z0-9_-]{6,40}$/.test(autor)) { autor = 'yo-' + Math.random().toString(36).slice(2, 10); guardar('oat-autor', autor); }
+// pendientes: reportes que no llegaron al servidor (sin señal); se reintentan y mientras tanto se ven aquí
+let pendientes = leer('oat-pendientes', []).filter(r => Date.now() - r.t < REGLAS.vigenciaMin * 60000);
+let remotos = [], conectado = null;   // conectado: null = aún no se sabe, true/false según la última consulta
 let demo = [];
-const todos = () => [...demo, ...propios];
+const todos = () => [...demo, ...remotos, ...pendientes];
+
+async function cargar(){
+  try {
+    const r = await fetch('/api/reportes', {headers:{accept:'application/json'}});
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    relojServidor = Math.abs(d.ahora - Date.now()) > 60_000 ? d.ahora - Date.now() : 0;
+    const vistos = new Set(d.reportes.map(x => x.id));
+    // los recién enviados pueden faltar unos segundos en la respuesta (la CDN la comparte 10 s)
+    remotos = [...d.reportes, ...remotos.filter(x => !vistos.has(x.id) && ahora() - x.t < 60_000)];
+    conectado = true;
+    if (pendientes.length) reenviar();
+  } catch (_) { conectado = false; }
+  pintar();
+}
+async function enviar(rep){
+  const r = await fetch('/api/reportes', {method:'POST', headers:{'content-type':'application/json'},
+    body:JSON.stringify({tramo:rep.tramo, estado:rep.estado, ubicado:rep.ubicado, autor})});
+  const d = await r.json().catch(() => ({}));
+  if (r.status === 201) { remotos.push(d.reporte); return {ok:true}; }
+  return {ok:false, rechazado:r.status >= 400 && r.status < 500 && r.status !== 404, error:d.error};
+}
+async function reenviar(){
+  const quedan = [];
+  for (const p of pendientes) {
+    if (ahora() - p.t > REGLAS.vigenciaMin * 60000) continue;
+    try { const x = await enviar(p); if (!x.ok && !x.rechazado) quedan.push(p); } catch (_) { quedan.push(p); }
+  }
+  pendientes = quedan; guardar('oat-pendientes', pendientes); pintar();
+}
 const vigentes = () => todos().filter(r => r.fuente !== 'oficial' && r.t <= ahora() && ahora() - r.t <= REGLAS.vigenciaMin * 60000);
 
 /* ---------- escenarios del modo demo (las dos líneas) ---------- */
@@ -456,7 +489,7 @@ function pintar(){
   document.querySelectorAll('[data-esc]').forEach(b => b.setAttribute('aria-pressed', b.dataset.esc === escenario));
   $('nota-reloj').textContent = desfase
     ? `Reloj adelantado ${Math.round(desfase / 60000)} min: los reportes pierden peso con el tiempo y caducan a los ${REGLAS.vigenciaMin} min.`
-    : 'Reportes simulados para ver cómo se comporta el mapa. Los tuyos sí se guardan, solo en este navegador.';
+    : 'Reportes simulados para ver cómo se comporta el mapa, mezclados con los reales.';
   ultimo = {estados, c, cifra, res};
   pintarResumen();
   pintarMapa(porLinea);
@@ -719,10 +752,21 @@ async function abrirReporte(estacion = null){
 document.querySelectorAll('[data-reportar]').forEach(b => b.addEventListener('click', () => abrirReporte()));
 $('cancelar').addEventListener('click', () => dlg.close());
 btnUbic.addEventListener('click', ubicarme);
-$('form').addEventListener('submit', e => {
+$('form').addEventListener('submit', async e => {
   e.preventDefault(); if (!sel.value || !elegido) return;
-  propios.push({tramo:sel.value, estado:elegido, t:ahora(), autor, ubicado}); guardar('oat-reportes', propios);
-  dlg.close(); linea = LINEA[TRAMO[sel.value].linea]; seleccion = sel.value; marcarUrl(); pintar(); encuadrar(); avisar('Gracias. Tu reporte cuenta durante 20 minutos.');
+  const rep = {tramo:sel.value, estado:elegido, t:ahora(), autor, ubicado};
+  const boton = $('enviar'); boton.disabled = true; boton.textContent = 'Enviando…';
+  let aviso = `Gracias. Tu reporte cuenta durante ${REGLAS.vigenciaMin} minutos.`;
+  try {
+    const x = await enviar(rep);
+    if (!x.ok && x.rechazado) { msg.textContent = x.error || 'No se pudo enviar el reporte.'; return; }
+    if (!x.ok) throw new Error('servidor');
+  } catch (_) {
+    // sin señal (pasa en el tren): se guarda aquí y se envía solo cuando vuelva la conexión
+    pendientes.push(rep); guardar('oat-pendientes', pendientes);
+    aviso = 'Sin conexión: guardamos tu reporte y lo enviamos apenas vuelva la señal.';
+  } finally { boton.textContent = 'Enviar reporte'; listo(); }
+  dlg.close(); linea = LINEA[TRAMO[sel.value].linea]; seleccion = sel.value; marcarUrl(); pintar(); encuadrar(); avisar(aviso);
 });
 function avisar(t){ const el = $('toast'); el.textContent = t; el.classList.add('ver'); clearTimeout(avisar.h); avisar.h = setTimeout(() => el.classList.remove('ver'), 3200); }
 
@@ -738,7 +782,11 @@ if (estacionSticker) {
 
 pintar();
 if (estacionSticker) abrirReporte(estacionSticker);
-setInterval(pintar, 30_000);   // los reportes envejecen: recalcular cada 30 s
+cargar();
+// cada 30 s: traer los reportes nuevos de todos (y recalcular, porque los reportes envejecen)
+setInterval(() => document.hidden ? pintar() : cargar(), 30_000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) cargar(); });
+addEventListener('online', cargar);
 </script>
 </body>
 </html>
