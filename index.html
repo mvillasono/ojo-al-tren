@@ -48,7 +48,8 @@
     --linea:rgba(255,255,255,.08); --linea-2:rgba(255,255,255,.14);
     --texto:#F2F2F2; --tenue:#8E8E93; --apagado:#5C5C63;
     --normal:#EDEDED; --lento:#F5B83D; --detenido:#FF4D4F; --sin_servicio:#7C7C85; --sin:#2E2E33;
-    --ancho:380px; --barra:56px;
+    --ancho:380px; --barra:56px; --franja:40px;
+    --tope:calc(var(--barra) + var(--franja) + env(safe-area-inset-top));   /* encabezado + franja de situación */
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;overflow:hidden;background:var(--fondo);color:var(--texto);
@@ -76,13 +77,26 @@
     background:repeating-linear-gradient(90deg,var(--texto) 0 1.3px,transparent 1.3px 2.6px);-webkit-background-clip:text;background-clip:text}
   @media (max-width:520px){.barra .lema{display:none}}
 
-  #map{position:fixed;left:0;right:0;top:calc(var(--barra) + env(safe-area-inset-top));bottom:0;background:var(--fondo)}
+  /* ---------- franja de situación: cómo está cada línea, sin tener que leer el mapa ---------- */
+  .franja{position:fixed;z-index:7;left:0;right:0;top:calc(var(--barra) + env(safe-area-inset-top));height:var(--franja);display:grid;
+    grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);background:var(--fondo);border-bottom:1px solid var(--linea)}
+  .franja .sit{display:flex;align-items:center;gap:10px;min-width:0;padding:0 18px;border-right:1px solid var(--linea);white-space:nowrap}
+  .franja .sit:last-child{border-right:0}
+  .franja .sit:hover{background:var(--sup)}
+  .franja .sit[aria-pressed=true]{box-shadow:inset 0 -2px 0 var(--texto)}
+  .franja .cod{font-weight:600;font-size:14px;letter-spacing:-.01em}
+  .franja .est{font-family:"Geist Mono",monospace;font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--c)}
+  .franja .sit[data-tipo=sin_datos] .est{color:var(--tenue)}
+  .franja .donde{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:12.5px;color:var(--tenue)}
+  @media (max-width:520px){.franja .sit{padding:0 14px;gap:8px}.franja .donde{display:none}}
+
+  #map{position:fixed;left:0;right:0;top:var(--tope);bottom:0;background:var(--fondo)}
 
   /* ---------- panel: hoja inferior en el móvil, columna a la izquierda en la web ---------- */
   .panel{position:fixed;z-index:6;left:0;right:0;bottom:0;display:flex;flex-direction:column;overflow:hidden;
     background:var(--panel);border-top:1px solid var(--linea);height:var(--h);transition:height .32s cubic-bezier(.2,.8,.2,1)}
   .panel[data-estado=cerrado]{--h:calc(68px + env(safe-area-inset-bottom))}
-  .panel[data-estado=abierto]{--h:calc(100% - var(--barra) - env(safe-area-inset-top) - 150px)}
+  .panel[data-estado=abierto]{--h:calc(100% - var(--tope) - 150px)}
   .panel[data-estado=cerrado] .cuerpo{display:none}
   .cuerpo{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
   .sec{padding:20px 20px 22px;border-bottom:1px solid var(--linea)}
@@ -100,7 +114,7 @@
   .resumen .txt span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   @media (min-width:900px){
-    .panel{top:calc(var(--barra) + env(safe-area-inset-top));right:auto;width:var(--ancho);height:auto;border-top:0;border-right:1px solid var(--linea)}
+    .panel{top:var(--tope);right:auto;width:var(--ancho);height:auto;border-top:0;border-right:1px solid var(--linea)}
     .panel[data-estado] .cuerpo{display:block}
     .resumen{display:none}
     #map{left:var(--ancho)}
@@ -242,6 +256,7 @@
   </a>
   <button class="celda inv" data-reportar>Reportar</button>
 </header>
+<nav class="franja" id="franja" aria-label="Situación de las líneas"></nav>
 <div id="map" role="application" aria-label="Mapa del Metro de Lima"></div>
 
 <aside class="panel" id="panel" data-estado="cerrado" aria-label="Estado de la línea">
@@ -419,9 +434,13 @@ function estadoCorto(l, est){
   const r = resumen(l, est);
   if (r.tipo === 'problemas') {
     const g = [...r.grupos].sort((a, b) => ESTADOS[b.estado].orden - ESTADOS[a.estado].orden)[0];
-    return {c:ESTADOS[g.estado].color, txt:ESTADOS[g.estado].nombre, alerta:g.estado === 'detenido'};
+    const otros = r.grupos.length - 1;
+    return {tipo:r.tipo, c:ESTADOS[g.estado].color, txt:ESTADOS[g.estado].nombre, alerta:g.estado === 'detenido',
+      donde:`${EST[g.desde].nombre} – ${EST[g.hasta].nombre}${otros ? ` y ${plural(otros, 'zona más', 'zonas más')}` : ''}`,
+      voz:`${ESTADOS[g.estado].nombre} ${entre(g.desde, g.hasta)}${otros ? ` y en ${plural(otros, 'zona más', 'zonas más')}` : ''}`};
   }
-  return r.tipo === 'normal' ? {c:ESTADOS.normal.color, txt:'Normal'} : {c:'var(--apagado)', txt:'Sin reportes'};
+  return r.tipo === 'normal' ? {tipo:r.tipo, c:ESTADOS.normal.color, txt:'Normal', donde:'', voz:'funcionando con normalidad'}
+                             : {tipo:r.tipo, c:'var(--apagado)', txt:'Sin reportes', donde:'', voz:'sin reportes recientes'};
 }
 function pintar(){
   const porLinea = Object.fromEntries(red.lineas.map(l => [l.id, estadoLinea(l, todos(), ahora())]));
@@ -434,6 +453,11 @@ function pintar(){
     return `<button class="linea-btn" role="tab" data-linea="${l.id}" aria-pressed="${l === linea}" aria-selected="${l === linea}">
       <span class="cod">${l.id}</span><span class="ruta">${rutaTxt(l)}</span>
       <span class="est-l" ${e.alerta ? 'data-alerta' : ''}><span class="punto" style="--c:${e.c}"></span>${e.txt}</span></button>`; }).join('');
+  // franja de arriba: el estado de todas las líneas de un vistazo (tocar una la muestra)
+  $('franja').innerHTML = red.lineas.map(l => { const e = estadoCorto(l, porLinea[l.id]);
+    return `<button class="sit" data-linea="${l.id}" data-tipo="${e.tipo}" aria-pressed="${l === linea}" style="--c:${e.c}"
+      aria-label="${l.nombre}: ${e.voz}"><span class="punto" ${e.alerta ? 'data-alerta' : ''}></span><span class="cod">${l.id}</span>
+      <span class="est">${e.txt}</span>${e.donde ? `<span class="donde">${e.donde}</span>` : ''}</button>`; }).join('');
   $('diag-tit').textContent = `${linea.id} · Tramo por tramo`;
   const conProblema = linea.tramos.filter(t => estados[t.id].estado && estados[t.id].estado !== 'normal' && estados[t.id].nivel !== 'sin_confirmar').length;
   const normales = linea.tramos.filter(t => estados[t.id].estado === 'normal').length;
@@ -498,6 +522,7 @@ $('leyenda').innerHTML = Object.values(ESTADOS).map(e => `<span><i style="--c:${
   + `<span><i class="dud"></i>Sin confirmar</span><span><i style="--c:${SIN_DATOS}"></i>Sin reportes</span>`;
 $('diagrama').addEventListener('click', e => { const b = e.target.closest('[data-tramo]'); if (b) elegirTramo(b.dataset.tramo); });
 $('lineas').addEventListener('click', e => { const b = e.target.closest('[data-linea]'); if (b) elegirLinea(b.dataset.linea); });
+$('franja').addEventListener('click', e => { const b = e.target.closest('[data-linea]'); if (b) elegirLinea(b.dataset.linea); });
 function elegirLinea(id){ if (linea.id === id) return; linea = LINEA[id]; seleccion = null; marcarUrl(); pintar(); encuadrar(); }
 /** La URL y el título siguen a la línea elegida (enlaces para compartir: /linea-1, /linea-2). */
 function marcarUrl(){
@@ -519,7 +544,7 @@ function pintarResumen(){
     alerta = e.estado === 'detenido' && e.nivel !== 'sin_confirmar';
   } else if (res.tipo === 'problemas') {
     const g = principal; b = `${linea.id} · ${ESTADOS[g.estado].nombre} · ${EST[g.desde].nombre} – ${EST[g.hasta].nombre}`;
-    s = g.nivel === 'oficial' && !g.personas ? 'Aviso oficial de Línea 1' : `${g.personas === 1 ? 'persona lo reporta' : 'personas lo reportan'} · ${haceCuanto(g.ultimo)}`;
+    s = g.nivel === 'oficial' && !g.personas ? `Aviso oficial de ${linea.nombre}` : `${g.personas === 1 ? 'persona lo reporta' : 'personas lo reportan'} · ${haceCuanto(g.ultimo)}`;
     alerta = g.estado === 'detenido';
   } else if (res.tipo === 'normal') { b = `${linea.id} · Funcionando con normalidad`; s = `personas en los últimos ${REGLAS.vigenciaMin} min`; }
   else { b = `${linea.id} · Sin reportes recientes`; s = '¿Estás en el tren? Cuéntanos cómo va'; }
