@@ -6,7 +6,8 @@ name: Desplegar
 # - Los secretos viven en el Environment «production» de GitHub, que solo acepta la rama prod:
 #   ningún otro workflow, rama ni pull request (y menos de un fork) puede leerlos.
 # - En GitHub solo se guardan VERCEL_TOKEN, VERCEL_ORG_ID y VERCEL_PROJECT_ID. Las variables del
-#   sitio (MAPBOX_TOKEN, PUBLIC_SITE_URL, DEMO) se configuran en Vercel y se bajan con «vercel pull».
+#   sitio (MAPBOX_TOKEN, PUBLIC_SITE_URL, DEMO, DATABASE_URL, AUTOR_SAL) se configuran en Vercel
+#   y se bajan con «vercel pull».
 # - Vercel no despliega prod por su cuenta (vercel.json → git.deploymentEnabled.prod = false),
 #   así no hay despliegues dobles; las vistas previas de dev y de los PR siguen siendo de Vercel.
 # Si un merge a prod no dispara este workflow, revisa en Actions que «Desplegar» esté en la lista.
@@ -33,6 +34,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 20
+      - run: npm ci
       - run: npm test
 
   desplegar:

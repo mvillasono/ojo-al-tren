@@ -33,12 +33,14 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Pruebas de la lógica (consenso, caducidad, ubicación)
+      - run: npm ci
+
+      - name: Pruebas de la lógica (consenso, caducidad, ubicación) y de la API
         run: npm test
 
       - name: Sintaxis de JavaScript y Python
         run: |
-          for f in lib/*.js scripts/*.js tests/*.js; do node --check "$f"; done
+          for f in api/*.js lib/*.js scripts/*.js tests/*.js; do node --check "$f"; done
           python -m py_compile scripts/*.py
 
       - name: JSON válidos

@@ -98,7 +98,7 @@ fs.writeFileSync(path.join(DIST, 'manifest.webmanifest'), JSON.stringify({
 // rutas de los stickers (/qr, /e/<estación>) también en local: serve lee dist/serve.json
 fs.writeFileSync(path.join(DIST, 'serve.json'), JSON.stringify({ rewrites: [
   { source: '/qr', destination: '/' }, { source: '/e/:estacion', destination: '/' }] }, null, 2));   // igual que vercel.json
-fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\n${sitio ? `Sitemap: ${sitio}/sitemap.xml\n` : ''}`);
+fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /api/\n${sitio ? `Sitemap: ${sitio}/sitemap.xml\n` : ''}`);
 if (sitio) {
   const hoy = new Date().toISOString().slice(0, 10);
   fs.writeFileSync(path.join(DIST, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
