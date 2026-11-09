@@ -53,3 +53,17 @@ test('límite por navegador: 15 por hora', async () => {
   assert.deepEqual(st.slice(0, 15), Array(15).fill(201));
   assert.equal(st[15], 429);
 });
+
+test('el motivo es opcional, se guarda y se valida', async () => {
+  const p = await llamar('POST', rep({ autor: 'motivo-1234', tramo: 'l1-20', motivo: 'puertas' }), { ip: '3.3.3.3' });
+  assert.equal(p.status, 201);
+  assert.equal(p.d.reporte.motivo, 'puertas');
+  const g = await llamar('GET');
+  assert.equal(g.d.reportes.find(x => x.id === p.d.reporte.id).motivo, 'puertas');
+  const sin = await llamar('POST', rep({ autor: 'motivo-1234', tramo: 'l1-21' }), { ip: '3.3.3.3' });
+  assert.equal(sin.d.reporte.motivo, null);
+  assert.equal((await llamar('POST', rep({ autor: 'motivo-1234', tramo: 'l1-22', motivo: 'ovnis' }), { ip: '3.3.3.3' })).status, 400);
+  assert.equal((await llamar('POST', rep({ autor: 'motivo-1234', tramo: 'l1-22', motivo: 'toString' }), { ip: '3.3.3.3' })).status, 400);
+  assert.equal((await llamar('POST', rep({ autor: 'motivo-1234', tramo: 'l1-22', motivo: 7 }), { ip: '3.3.3.3' })).status, 400);
+  assert.equal((await llamar('POST', rep({ autor: 'motivo-1234', tramo: 'l1-22', estado: 'normal', motivo: 'falla' }), { ip: '3.3.3.3' })).status, 400);
+});
