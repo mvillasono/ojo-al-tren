@@ -1,7 +1,8 @@
 /**
  * /api/reportes — los reportes que todos ven.
- *   GET  → { ahora, reportes:[{id, tramo, estado, ubicado, autor, t}] } de los últimos 20 min
- *   POST { tramo, estado, ubicado, autor } → { reporte }
+ *   GET  → { ahora, reportes:[{id, tramo, estado, motivo, ubicado, autor, t}] } de los últimos 20 min
+ *   POST { tramo, estado, motivo?, ubicado, autor } → { reporte }
+ *        motivo (opcional): 'afluencia' | 'puertas' | 'estacion' | 'falla'; no se acepta con estado 'normal'.
  *
  * Privacidad: no se recibe ni se guarda la ubicación (el navegador solo dice si el GPS lo puso
  * sobre la vía). El id del navegador y la IP se guardan como hash; el de la IP cambia cada día
@@ -13,6 +14,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import { recientes, contar, guardar, limpiar, enMemoria } from './_db.js';
+import { MOTIVOS } from '../lib/estado.js';
 
 const VIGENCIA_MIN = 20;     // igual que REGLAS.vigenciaMin en lib/estado.js
 const GUARDAR_DIAS = 7;
@@ -59,14 +61,16 @@ export default async function handler(req, res) {
 
     let b;
     try { b = await cuerpo(req); } catch { return responder(res, 400, { error: 'Cuerpo inválido' }); }
-    const { tramo, estado, ubicado = false, autor } = b || {};
+    const { tramo, estado, motivo = null, ubicado = false, autor } = b || {};
     if (!TRAMOS.has(tramo)) return responder(res, 400, { error: 'Tramo desconocido' });
     if (!ESTADOS.has(estado)) return responder(res, 400, { error: 'Estado desconocido' });
+    if (motivo !== null && !(typeof motivo === 'string' && Object.hasOwn(MOTIVOS, motivo))) return responder(res, 400, { error: 'Motivo desconocido' });
+    if (motivo !== null && estado === 'normal') return responder(res, 400, { error: 'Un servicio normal no lleva motivo' });
     if (typeof ubicado !== 'boolean') return responder(res, 400, { error: 'ubicado debe ser true o false' });
     if (typeof autor !== 'string' || !/^[A-Za-z0-9_-]{6,40}$/.test(autor)) return responder(res, 400, { error: 'Autor inválido' });
 
     const dia = new Date().toISOString().slice(0, 10);
-    const r = { tramo, estado, ubicado, autor: hash(SAL, 'autor', autor), red_hash: hash(SAL, dia, ipDe(req)) };
+    const r = { tramo, estado, motivo, ubicado, autor: hash(SAL, 'autor', autor), red_hash: hash(SAL, dia, ipDe(req)) };
     for (const l of LIMITES) {
       const filtro = Object.fromEntries(l.por.map(k => [k, r[k]]));
       if (await contar(filtro, l.min) >= l.max) { res.setHeader('Retry-After', String(l.min * 60)); return responder(res, 429, { error: l.msg }); }

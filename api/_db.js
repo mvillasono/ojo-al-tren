@@ -17,14 +17,15 @@ const preparar = () => (lista ||= pool.query(fs.readFileSync(new URL('../db/sche
 
 const memoria = [];
 let siguiente = 1;
-const fila = r => ({ id: Number(r.id), tramo: r.tramo, estado: r.estado, ubicado: r.ubicado, autor: r.autor, t: new Date(r.creado).getTime() });
+const fila = r => ({ id: Number(r.id), tramo: r.tramo, estado: r.estado, motivo: r.motivo || null, ubicado: r.ubicado, autor: r.autor,
+  t: new Date(r.creado).getTime() });
 
 /** Reportes de los últimos `min` minutos, del más antiguo al más nuevo. */
 export async function recientes(min) {
   if (!pool) { const d = Date.now() - min * 60_000; return memoria.filter(r => r.creado >= d).map(fila); }
   await preparar();
   const { rows } = await pool.query(
-    `SELECT id, tramo, estado, ubicado, autor, creado FROM reportes WHERE creado > now() - make_interval(mins => $1) ORDER BY creado`, [min]);
+    `SELECT id, tramo, estado, motivo, ubicado, autor, creado FROM reportes WHERE creado > now() - make_interval(mins => $1) ORDER BY creado`, [min]);
   return rows.map(fila);
 }
 
@@ -47,8 +48,8 @@ export async function guardar(r) {
   if (!pool) { const x = { id: siguiente++, ...r, creado: Date.now() }; memoria.push(x); return fila(x); }
   await preparar();
   const { rows } = await pool.query(
-    `INSERT INTO reportes (tramo, estado, ubicado, autor, red_hash) VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, tramo, estado, ubicado, autor, creado`, [r.tramo, r.estado, r.ubicado, r.autor, r.red_hash]);
+    `INSERT INTO reportes (tramo, estado, motivo, ubicado, autor, red_hash) VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id, tramo, estado, motivo, ubicado, autor, creado`, [r.tramo, r.estado, r.motivo, r.ubicado, r.autor, r.red_hash]);
   return fila(rows[0]);
 }
 
