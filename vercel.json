@@ -58,6 +58,15 @@
           "value": "public, max-age=0, must-revalidate"
         }
       ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
     }
   ],
   "rewrites": [
@@ -69,5 +78,11 @@
       "source": "/e/:estacion",
       "destination": "/"
     }
-  ]
+  ],
+  "functions": {
+    "api/reportes.js": {
+      "includeFiles": "{data/lineas.json,db/schema.sql}",
+      "maxDuration": 10
+    }
+  }
 }

@@ -10,8 +10,8 @@ según los reportes de quienes viajan en ellas: normal, lento, detenido o sin se
 Proyecto cívico, gratuito y de **código libre**. No está afiliado a Línea 1, Línea 2 ni a la ATU:
 la información viene de usuarios y siempre se muestra como tal.
 
-> **Estado: prototipo.** Los reportes se guardan solo en el navegador y hay un **modo demo** con
-> escenarios simulados. El siguiente paso es compartirlos entre usuarios (ver «Hoja de ruta»).
+> **Estado: beta.** Los reportes se comparten entre todos los usuarios (`/api/reportes` + PostgreSQL).
+> Hay un **modo demo** con escenarios simulados para probar sin gente en el tren.
 
 ## Cómo funciona
 
@@ -24,6 +24,12 @@ la información viene de usuarios y siempre se muestra como tal.
   - **confirmado** con al menos 2 personas y un estado con el 60 % del peso; si no, «sin confirmar»
     (línea punteada); a igualdad gana el estado más grave;
   - un aviso oficial manda durante 60 min.
+- Los reportes viajan por `/api/reportes` (`api/reportes.js`, función de Vercel) y se guardan en
+  PostgreSQL (`db/schema.sql`). La web los vuelve a pedir cada 30 s.
+  - **Privacidad**: no se envía la ubicación, solo el tramo, el estado y si el GPS lo puso sobre la vía.
+    El id anónimo del navegador y la IP se guardan como hash (el de la IP cambia cada día).
+  - **Anti-spam**: 1 reporte por tramo por minuto y 15 por hora por navegador; 60 por hora por red.
+  - **Sin señal** (pasa en el tren): el reporte queda en el celular y se envía cuando vuelve la conexión.
 - Paleta: el color solo aparece cuando hay algo que mirar. Normal es blanco; lento, ámbar;
   detenido, coral; sin servicio, acero; sin reportes, grafito.
 
@@ -33,11 +39,13 @@ Requisitos: Node.js 20+ (y Python 3.10+ solo para regenerar las líneas).
 
 ```bash
 cp .env.example .env      # opcional: tu token público de Mapbox (pk.…); vacío = OpenFreeMap
-npm run dev               # arma dist/ y lo sirve en http://localhost:3001 (/, /linea-1, /linea-2)
-npm test                  # pruebas de la lógica (consenso, caducidad, ubicación)
+npm install               # una sola dependencia: pg (la API)
+npm run dev               # web + API en http://localhost:3001 (/, /linea-1, /linea-2, /api/reportes)
+npm test                  # pruebas de la lógica y de la API
 ```
 
-No hay dependencias que instalar: HTML, CSS y JavaScript sin framework.
+Sin `DATABASE_URL` en `.env`, la API guarda los reportes en memoria (se pierden al cerrar): sirve
+para probar sin base de datos. La web es HTML, CSS y JavaScript sin framework.
 
 ## Colaborar
 
@@ -67,6 +75,9 @@ Configuración, una sola vez:
 1. En Vercel, crea el proyecto (importando el repo o con `npx vercel link`). Build `npm run build`,
    salida `dist/`. Variables de **Production**: `MAPBOX_TOKEN` (público, restringido a tus dominios
    en mapbox.com), `PUBLIC_SITE_URL` (p. ej. `https://ojoaltren.com`) y `DEMO=no`.
+   Base de datos: Vercel → Storage → **Neon** (plan gratis) → conectar al proyecto; eso crea
+   `DATABASE_URL`. Agrega también `AUTOR_SAL` (secreta, un texto al azar largo). La tabla se crea
+   sola en el primer reporte (o con `npm run db:init`).
 2. Crea un token en vercel.com → Account Settings → Tokens (con fecha de vencimiento).
 3. En GitHub → Settings → Environments → **production** (solo la rama `prod` puede usarlo), agrega
    los secretos `VERCEL_TOKEN`, `VERCEL_ORG_ID` y `VERCEL_PROJECT_ID` (los dos IDs están en
@@ -89,7 +100,7 @@ estaciones nuevas y OSM actualice la relación, basta con volver a correr `npm r
 
 ## Hoja de ruta
 
-- [ ] API + base de datos para compartir los reportes entre usuarios (con límites anti-spam).
+- [x] API + base de datos para compartir los reportes entre usuarios (con límites anti-spam).
 - [ ] Bot de WhatsApp: «¿cómo está el tren?» y «el tren está parado en Gamarra».
 - [ ] Avisos oficiales de Línea 1 y Línea 2 cuando publiquen incidencias.
 - [ ] Nuevas estaciones de la Línea 2 (Ate) cuando entren en operación.
