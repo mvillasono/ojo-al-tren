@@ -161,3 +161,37 @@ test('a ~700 m de una estación y fuera de la vía: sugerencia, no ubicado', () 
 test('lejos de todo (Miraflores): elegir a mano', () => {
   assert.equal(ubicarEnRed(red.lineas, [-77.03, -12.12]).tipo, 'lejos');
 });
+
+/* ---------- motivo: por qué pasa ---------- */
+test('el motivo lo dice quien votó el estado ganador; el de más peso gana', () => {
+  const e = estadoTramo([r('detenido', 2, 'a', { motivo: 'puertas' }), r('detenido', 1, 'b', { motivo: 'puertas' }),
+    r('detenido', 1, 'c', { motivo: 'falla' }), r('detenido', 1, 'd')], AHORA);
+  assert.deepEqual([e.estado, e.nivel, e.motivo], ['detenido', 'confirmado', 'puertas']);
+});
+
+test('el motivo no cambia el estado ni la confirmación, y es opcional', () => {
+  const sin = estadoTramo([r('lento', 2, 'a'), r('lento', 1, 'b')], AHORA);
+  const con = estadoTramo([r('lento', 2, 'a', { motivo: 'afluencia' }), r('lento', 1, 'b')], AHORA);
+  assert.deepEqual([sin.estado, sin.nivel, sin.motivo], ['lento', 'confirmado', null]);
+  assert.deepEqual([con.estado, con.nivel, con.motivo], ['lento', 'confirmado', 'afluencia']);
+});
+
+test('el motivo de otro estado no se cuela, ni uno desconocido', () => {
+  const e = estadoTramo([r('detenido', 2, 'a'), r('detenido', 1, 'b'), r('lento', 1, 'c', { motivo: 'afluencia' }),
+    r('detenido', 1, 'd', { motivo: 'toString' })], AHORA);
+  assert.deepEqual([e.estado, e.motivo], ['detenido', null]);
+});
+
+test('el aviso oficial trae su motivo', () => {
+  const e = estadoTramo([r('sin_servicio', 5, 'linea1', { fuente: 'oficial', motivo: 'falla' })], AHORA);
+  assert.deepEqual([e.nivel, e.motivo], ['oficial', 'falla']);
+});
+
+test('el resumen lleva el motivo que más tramos comparten', () => {
+  const m = { 'l1-14': 'falla', 'l1-15': 'falla', 'l1-16': 'puertas' };
+  const rs = Object.entries(m).flatMap(([tramo, motivo]) => [
+    { tramo, estado: 'detenido', t: hace(2), autor: 'a' + tramo, motivo }, { tramo, estado: 'detenido', t: hace(1), autor: 'b' + tramo, motivo }]);
+  const res = resumen(linea, estadoLinea(linea, rs, AHORA));
+  assert.equal(res.grupos.length, 1);
+  assert.equal(res.grupos[0].motivo, 'falla');
+});

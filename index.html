@@ -48,7 +48,8 @@
     --linea:rgba(255,255,255,.08); --linea-2:rgba(255,255,255,.14);
     --texto:#F2F2F2; --tenue:#8E8E93; --apagado:#5C5C63;
     --normal:#EDEDED; --lento:#F5B83D; --detenido:#FF4D4F; --sin_servicio:#7C7C85; --sin:#2E2E33;
-    --ancho:380px; --barra:56px;
+    --ancho:380px; --barra:56px; --franja:40px;
+    --tope:calc(var(--barra) + var(--franja) + env(safe-area-inset-top));   /* encabezado + franja de situación */
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;overflow:hidden;background:var(--fondo);color:var(--texto);
@@ -76,13 +77,26 @@
     background:repeating-linear-gradient(90deg,var(--texto) 0 1.3px,transparent 1.3px 2.6px);-webkit-background-clip:text;background-clip:text}
   @media (max-width:520px){.barra .lema{display:none}}
 
-  #map{position:fixed;left:0;right:0;top:calc(var(--barra) + env(safe-area-inset-top));bottom:0;background:var(--fondo)}
+  /* ---------- franja de situación: cómo está cada línea, sin tener que leer el mapa ---------- */
+  .franja{position:fixed;z-index:7;left:0;right:0;top:calc(var(--barra) + env(safe-area-inset-top));height:var(--franja);display:grid;
+    grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);background:var(--fondo);border-bottom:1px solid var(--linea)}
+  .franja .sit{display:flex;align-items:center;gap:10px;min-width:0;padding:0 18px;border-right:1px solid var(--linea);white-space:nowrap}
+  .franja .sit:last-child{border-right:0}
+  .franja .sit:hover{background:var(--sup)}
+  .franja .sit[aria-pressed=true]{box-shadow:inset 0 -2px 0 var(--texto)}
+  .franja .cod{font-weight:600;font-size:14px;letter-spacing:-.01em}
+  .franja .est{font-family:"Geist Mono",monospace;font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--c)}
+  .franja .sit[data-tipo=sin_datos] .est{color:var(--tenue)}
+  .franja .donde{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:12.5px;color:var(--tenue)}
+  @media (max-width:520px){.franja .sit{padding:0 14px;gap:8px}.franja .donde{display:none}}
+
+  #map{position:fixed;left:0;right:0;top:var(--tope);bottom:0;background:var(--fondo)}
 
   /* ---------- panel: hoja inferior en el móvil, columna a la izquierda en la web ---------- */
   .panel{position:fixed;z-index:6;left:0;right:0;bottom:0;display:flex;flex-direction:column;overflow:hidden;
     background:var(--panel);border-top:1px solid var(--linea);height:var(--h);transition:height .32s cubic-bezier(.2,.8,.2,1)}
   .panel[data-estado=cerrado]{--h:calc(68px + env(safe-area-inset-bottom))}
-  .panel[data-estado=abierto]{--h:calc(100% - var(--barra) - env(safe-area-inset-top) - 150px)}
+  .panel[data-estado=abierto]{--h:calc(100% - var(--tope) - 150px)}
   .panel[data-estado=cerrado] .cuerpo{display:none}
   .cuerpo{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
   .sec{padding:20px 20px 22px;border-bottom:1px solid var(--linea)}
@@ -100,7 +114,7 @@
   .resumen .txt span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   @media (min-width:900px){
-    .panel{top:calc(var(--barra) + env(safe-area-inset-top));right:auto;width:var(--ancho);height:auto;border-top:0;border-right:1px solid var(--linea)}
+    .panel{top:var(--tope);right:auto;width:var(--ancho);height:auto;border-top:0;border-right:1px solid var(--linea)}
     .panel[data-estado] .cuerpo{display:block}
     .resumen{display:none}
     #map{left:var(--ancho)}
@@ -132,7 +146,7 @@
   .meta{margin:12px 0 0;font-family:"Geist Mono",monospace;font-size:12px;color:var(--texto)}
   .meta .sello{display:inline-block;margin-right:8px;padding:2px 7px;border:1px solid var(--linea-2);border-radius:2px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase}
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 0}
-  .chip{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 10px;border:1px solid var(--linea-2);border-radius:2px;
+  .chip{display:inline-flex;align-items:center;gap:8px;min-height:30px;padding:6px 10px;line-height:1.35;border:1px solid var(--linea-2);border-radius:2px;
     font-family:"Geist Mono",monospace;font-size:11.5px;color:var(--texto)}
   .chip .punto{width:6px;height:6px}
   .stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--linea);margin:20px -20px -22px}
@@ -214,6 +228,11 @@
   .opcion span{font-size:12px;color:var(--tenue)}
   .opcion::before{content:"";width:18px;height:3px;border-radius:1px;background:var(--c);margin-bottom:8px;box-shadow:0 0 8px 0 color-mix(in srgb,var(--c) 50%,transparent)}
   .opcion[aria-pressed=true]{border-color:var(--c);background:var(--sup)}
+  .motivos small{font-size:inherit;color:var(--apagado);letter-spacing:inherit}
+  .motivo-ops{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 18px}
+  .motivo-ops button{height:36px;padding:0 12px;border:1px solid var(--linea-2);border-radius:2px;font-size:13.5px}
+  .motivo-ops button:hover{background:var(--sup)}
+  .motivo-ops button[aria-pressed=true]{background:var(--texto);color:var(--fondo);border-color:var(--texto)}
   .dlg .acciones{display:flex;gap:6px}
   .dlg .acciones .btn{flex:1}
   .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:20;max-width:calc(100% - 32px);
@@ -242,6 +261,7 @@
   </a>
   <button class="celda inv" data-reportar>Reportar</button>
 </header>
+<nav class="franja" id="franja" aria-label="Situación de las líneas"></nav>
 <div id="map" role="application" aria-label="Mapa del Metro de Lima"></div>
 
 <aside class="panel" id="panel" data-estado="cerrado" aria-label="Estado de la línea">
@@ -290,6 +310,10 @@
     <p class="msg" id="msg-ubic"></p>
     <span class="mono">¿Cómo está?</span>
     <div class="opciones" id="opciones"></div>
+    <div class="motivos" id="motivos" hidden>
+      <span class="mono">¿Sabes por qué? <small>· opcional</small></span>
+      <div class="motivo-ops" id="motivo-ops" role="group" aria-label="Motivo"></div>
+    </div>
     <div class="acciones">
       <button type="button" class="btn sec" id="cancelar">Cancelar</button>
       <button type="submit" class="btn" id="enviar" disabled>Enviar reporte</button>
@@ -301,7 +325,7 @@
 <!--__ANALITICA__-->
 <script src="/config.js" onerror="window.OAT_CONFIG = {}"></script>
 <script type="module">
-import { ESTADOS, SIN_DATOS, REGLAS, estadoLinea, resumen, ubicarEnRed } from '/lib/estado.js';
+import { ESTADOS, MOTIVOS, SIN_DATOS, REGLAS, estadoLinea, resumen, ubicarEnRed } from '/lib/estado.js';
 
 const CFG = window.OAT_CONFIG || {};
 const MAPBOX = CFG.mapProvider === 'mapbox' && /^pk\./.test(CFG.mapboxToken || '');
@@ -329,6 +353,9 @@ const tramoTxt = id => `${EST[TRAMO[id].desde].nombre} – ${EST[TRAMO[id].hasta
 const rutaTxt = l => `${l.de} – ${l.a}`;
 const colorDe = estado => estado ? ESTADOS[estado].color : SIN_DATOS;
 const fmt = n => typeof n === 'number' ? n.toLocaleString('es-PE') : n;
+// el motivo, si alguien lo dijo: « por una falla técnica», «· Puertas»
+const por = m => m ? ` ${MOTIVOS[m].por}` : '';
+const conMotivo = m => m ? ` · ${MOTIVOS[m].corto}` : '';
 
 /* ---------- reportes: los de todos (/api/reportes) + los tuyos sin enviar + los simulados del modo demo ---------- */
 const guardar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} };
@@ -358,7 +385,7 @@ async function cargar(){
 }
 async function enviar(rep){
   const r = await fetch('/api/reportes', {method:'POST', headers:{'content-type':'application/json'},
-    body:JSON.stringify({tramo:rep.tramo, estado:rep.estado, ubicado:rep.ubicado, autor})});
+    body:JSON.stringify({tramo:rep.tramo, estado:rep.estado, motivo:rep.motivo ?? null, ubicado:rep.ubicado, autor})});
   const d = await r.json().catch(() => ({}));
   if (r.status === 201) { remotos.push(d.reporte); return {ok:true}; }
   return {ok:false, rechazado:r.status >= 400 && r.status < 500 && r.status !== 404, error:d.error};
@@ -376,22 +403,23 @@ const vigentes = () => todos().filter(r => r.fuente !== 'oficial' && r.t <= ahor
 /* ---------- escenarios del modo demo (las dos líneas) ---------- */
 const rango = (l, a, b) => { const T = LINEA[l].tramos, i = T.findIndex(t => t.desde === a), j = T.findIndex(t => t.desde === b); return T.slice(i, j + 1).map(t => t.id); };
 const cada = (l, n, hasta = 99) => LINEA[l].tramos.filter((_, i) => i % n === 0 && i < hasta).map(t => t.id);
-function generar(tramos, estado, n, maxMin){
+function generar(tramos, estado, n, maxMin, motivo = null){
   const out = [];
   for (const t of tramos) for (let i = 0; i < n; i++)
-    out.push({tramo:t, estado, t:ahora() - Math.random() * maxMin * 60000, autor:`demo-${t}-${estado}-${i}`, ubicado:Math.random() < .5});
+    out.push({tramo:t, estado, t:ahora() - Math.random() * maxMin * 60000, autor:`demo-${t}-${estado}-${i}`, ubicado:Math.random() < .5,
+      motivo:motivo && i % 3 !== 2 ? motivo : null});   // uno de cada tres no sabe por qué
   return out;
 }
 const l2Normal = () => generar(LINEA.L2.tramos.map(t => t.id), 'normal', 2, 14);
 const ESCENARIOS = {
   normal:   {nombre:'Día normal',       gen:() => [...generar(cada('L1', 2), 'normal', 2, 15), ...l2Normal()]},
-  detenido: {nombre:'Tren detenido',    gen:() => [...generar(cada('L1', 3), 'normal', 2, 15), ...generar(rango('L1', 'l1-arriola', 'l1-gamarra'), 'detenido', 4, 8),
-                                                   ...generar([...rango('L1', 'l1-la-cultura', 'l1-la-cultura'), ...rango('L1', 'l1-miguel-grau', 'l1-miguel-grau')], 'lento', 3, 10),
+  detenido: {nombre:'Tren detenido',    gen:() => [...generar(cada('L1', 3), 'normal', 2, 15), ...generar(rango('L1', 'l1-arriola', 'l1-gamarra'), 'detenido', 4, 8, 'puertas'),
+                                                   ...generar([...rango('L1', 'l1-la-cultura', 'l1-la-cultura'), ...rango('L1', 'l1-miguel-grau', 'l1-miguel-grau')], 'lento', 3, 10, 'afluencia'),
                                                    ...l2Normal()]},
-  punta:    {nombre:'Hora punta',       gen:() => [...generar(rango('L1', 'l1-atocongo', 'l1-angamos'), 'lento', 3, 12), ...generar(rango('L1', 'l1-caja-de-agua', 'l1-los-postes'), 'lento', 2, 12),
-                                                   ...generar(cada('L1', 4), 'normal', 2, 15), ...generar(rango('L2', 'l2-hermilio-valdizan', 'l2-colectora-industrial'), 'lento', 3, 10),
+  punta:    {nombre:'Hora punta',       gen:() => [...generar(rango('L1', 'l1-atocongo', 'l1-angamos'), 'lento', 3, 12, 'afluencia'), ...generar(rango('L1', 'l1-caja-de-agua', 'l1-los-postes'), 'lento', 2, 12, 'afluencia'),
+                                                   ...generar(cada('L1', 4), 'normal', 2, 15), ...generar(rango('L2', 'l2-hermilio-valdizan', 'l2-colectora-industrial'), 'lento', 3, 10, 'estacion'),
                                                    ...generar(rango('L2', 'l2-ovalo-santa-anita', 'l2-ovalo-santa-anita'), 'normal', 2, 10)]},
-  oficial:  {nombre:'Aviso oficial',    gen:() => [...rango('L1', 'l1-los-jardines', 'l1-santa-rosa').map(t => ({tramo:t, estado:'sin_servicio', t:ahora() - 25 * 60000, autor:'linea1', fuente:'oficial'})),
+  oficial:  {nombre:'Aviso oficial',    gen:() => [...rango('L1', 'l1-los-jardines', 'l1-santa-rosa').map(t => ({tramo:t, estado:'sin_servicio', motivo:'falla', t:ahora() - 25 * 60000, autor:'linea1', fuente:'oficial'})),
                                                    ...generar(cada('L1', 3, 19), 'normal', 2, 15), ...l2Normal()]},
   dudas:    {nombre:'Reportes sueltos', gen:() => [...generar(rango('L1', 'l1-san-juan', 'l1-san-juan'), 'detenido', 1, 6), ...generar(rango('L1', 'l1-el-angel', 'l1-el-angel'), 'lento', 1, 4),
                                                    ...generar(rango('L1', 'l1-el-angel', 'l1-el-angel'), 'normal', 1, 9), ...generar(rango('L2', 'l2-colectora-industrial', 'l2-colectora-industrial'), 'detenido', 1, 3)]},
@@ -419,9 +447,13 @@ function estadoCorto(l, est){
   const r = resumen(l, est);
   if (r.tipo === 'problemas') {
     const g = [...r.grupos].sort((a, b) => ESTADOS[b.estado].orden - ESTADOS[a.estado].orden)[0];
-    return {c:ESTADOS[g.estado].color, txt:ESTADOS[g.estado].nombre, alerta:g.estado === 'detenido'};
+    const otros = r.grupos.length - 1;
+    return {tipo:r.tipo, c:ESTADOS[g.estado].color, txt:ESTADOS[g.estado].nombre, alerta:g.estado === 'detenido',
+      donde:`${g.motivo ? `${MOTIVOS[g.motivo].nombre} · ` : ''}${EST[g.desde].nombre} – ${EST[g.hasta].nombre}${otros ? ` y ${plural(otros, 'zona más', 'zonas más')}` : ''}`,
+      voz:`${ESTADOS[g.estado].nombre}${por(g.motivo)} ${entre(g.desde, g.hasta)}${otros ? ` y en ${plural(otros, 'zona más', 'zonas más')}` : ''}`};
   }
-  return r.tipo === 'normal' ? {c:ESTADOS.normal.color, txt:'Normal'} : {c:'var(--apagado)', txt:'Sin reportes'};
+  return r.tipo === 'normal' ? {tipo:r.tipo, c:ESTADOS.normal.color, txt:'Normal', donde:'', voz:'funcionando con normalidad'}
+                             : {tipo:r.tipo, c:'var(--apagado)', txt:'Sin reportes', donde:'', voz:'sin reportes recientes'};
 }
 function pintar(){
   const porLinea = Object.fromEntries(red.lineas.map(l => [l.id, estadoLinea(l, todos(), ahora())]));
@@ -434,6 +466,11 @@ function pintar(){
     return `<button class="linea-btn" role="tab" data-linea="${l.id}" aria-pressed="${l === linea}" aria-selected="${l === linea}">
       <span class="cod">${l.id}</span><span class="ruta">${rutaTxt(l)}</span>
       <span class="est-l" ${e.alerta ? 'data-alerta' : ''}><span class="punto" style="--c:${e.c}"></span>${e.txt}</span></button>`; }).join('');
+  // franja de arriba: el estado de todas las líneas de un vistazo (tocar una la muestra)
+  $('franja').innerHTML = red.lineas.map(l => { const e = estadoCorto(l, porLinea[l.id]);
+    return `<button class="sit" data-linea="${l.id}" data-tipo="${e.tipo}" aria-pressed="${l === linea}" style="--c:${e.c}"
+      aria-label="${l.nombre}: ${e.voz}"><span class="punto" ${e.alerta ? 'data-alerta' : ''}></span><span class="cod">${l.id}</span>
+      <span class="est">${e.txt}</span>${e.donde ? `<span class="donde">${e.donde}</span>` : ''}</button>`; }).join('');
   $('diag-tit').textContent = `${linea.id} · Tramo por tramo`;
   const conProblema = linea.tramos.filter(t => estados[t.id].estado && estados[t.id].estado !== 'normal' && estados[t.id].nivel !== 'sin_confirmar').length;
   const normales = linea.tramos.filter(t => estados[t.id].estado === 'normal').length;
@@ -449,10 +486,10 @@ function pintar(){
     ceja = `${ESTADOS[g.estado].nombre} · ${g.nivel === 'oficial' ? 'aviso oficial' : 'confirmado'}`;
     cifra = oficialSolo ? g.tramos.length : g.personas;
     dice = oficialSolo
-      ? `${g.tramos.length === 1 ? 'tramo' : 'tramos'} <b>${ESTADOS[g.estado].nombre.toLowerCase()}</b> entre <b>${EST[g.desde].nombre}</b> y <b>${EST[g.hasta].nombre}</b>, según el aviso oficial`
-      : `${g.personas === 1 ? 'persona reporta' : 'personas reportan'} el tren <b>${ESTADOS[g.estado].nombre.toLowerCase()}</b> entre <b>${EST[g.desde].nombre}</b> y <b>${EST[g.hasta].nombre}</b>`;
+      ? `${g.tramos.length === 1 ? 'tramo' : 'tramos'} <b>${ESTADOS[g.estado].nombre.toLowerCase()}</b>${por(g.motivo)} entre <b>${EST[g.desde].nombre}</b> y <b>${EST[g.hasta].nombre}</b>, según el aviso oficial`
+      : `${g.personas === 1 ? 'persona reporta' : 'personas reportan'} el tren <b>${ESTADOS[g.estado].nombre.toLowerCase()}</b>${por(g.motivo)} entre <b>${EST[g.desde].nombre}</b> y <b>${EST[g.hasta].nombre}</b>`;
     meta = `<span class="sello">${g.nivel === 'oficial' ? 'Oficial' : 'Confirmado'}</span>Último reporte ${haceCuanto(g.ultimo)}`;
-    chips = res.grupos.filter(x => x !== g).map(x => `<span class="chip" style="--c:${ESTADOS[x.estado].color}"><span class="punto"></span>${ESTADOS[x.estado].nombre} · ${EST[x.desde].nombre} – ${EST[x.hasta].nombre}</span>`).join('');
+    chips = res.grupos.filter(x => x !== g).map(x => `<span class="chip" style="--c:${ESTADOS[x.estado].color}"><span class="punto"></span>${ESTADOS[x.estado].nombre}${conMotivo(x.motivo)} · ${EST[x.desde].nombre} – ${EST[x.hasta].nombre}</span>`).join('');
   } else if (res.tipo === 'normal') {
     c = ESTADOS.normal.color; ceja = 'En vivo · funcionando'; cifra = personasVig;
     dice = `${personasVig === 1 ? 'persona dice' : 'personas dicen'} que la ${linea.nombre} funciona <b>con normalidad</b>`;
@@ -461,7 +498,7 @@ function pintar(){
     c = 'var(--apagado)'; ceja = 'Sin reportes'; cifra = 0;
     dice = `reportes en los últimos ${REGLAS.vigenciaMin} min. <b>¿Estás en el tren?</b> Cuéntanos cómo va.`;
   }
-  chips += dudosos.map(t => `<span class="chip" style="--c:${ESTADOS[estados[t.id].estado].color}"><span class="punto"></span>${ESTADOS[estados[t.id].estado].nombre}? · ${EST[t.desde].nombre} – ${EST[t.hasta].nombre}</span>`).join('');
+  chips += dudosos.map(t => `<span class="chip" style="--c:${ESTADOS[estados[t.id].estado].color}"><span class="punto"></span>${ESTADOS[estados[t.id].estado].nombre}?${conMotivo(estados[t.id].motivo)} · ${EST[t.desde].nombre} – ${EST[t.hasta].nombre}</span>`).join('');
   $('estado').innerHTML = `<div class="ceja" ${principal && principal.estado === 'detenido' ? 'data-alerta' : ''} style="--c:${c}">
       <span class="punto"></span><span class="mono" style="color:var(--texto)">${ceja}</span></div>
     <div class="cifra">${fmt(cifra)}</div>
@@ -478,11 +515,11 @@ function pintar(){
     const t = linea.tramos[i]; if (!t) return;
     const s = estados[t.id];
     let info = '';
-    if (s.nivel === 'oficial') info = `<b>${ESTADOS[s.estado].nombre}</b> · aviso oficial`;
-    else if (s.nivel === 'confirmado' && s.estado !== 'normal') info = `<b>${ESTADOS[s.estado].nombre}</b> · ${plural(s.personas, 'persona', 'personas')} · ${haceCuanto(s.ultimo)}`;
-    else if (s.nivel === 'sin_confirmar') info = `<b>${ESTADOS[s.estado].nombre}?</b> · sin confirmar`;
+    if (s.nivel === 'oficial') info = `<b>${ESTADOS[s.estado].nombre}</b>${conMotivo(s.motivo)} · aviso oficial`;
+    else if (s.nivel === 'confirmado' && s.estado !== 'normal') info = `<b>${ESTADOS[s.estado].nombre}</b>${conMotivo(s.motivo)} · ${plural(s.personas, 'persona', 'personas')} · ${haceCuanto(s.ultimo)}`;
+    else if (s.nivel === 'sin_confirmar') info = `<b>${ESTADOS[s.estado].nombre}?</b>${conMotivo(s.motivo)} · sin confirmar`;
     h += `<li><button class="tramo" data-tramo="${t.id}" data-estado="${s.estado || ''}" data-nivel="${s.nivel}" style="--c:${colorDe(s.estado)}"
-      aria-current="${seleccion === t.id}" aria-label="Tramo ${entre(t.desde, t.hasta)}: ${s.estado ? ESTADOS[s.estado].nombre : 'sin reportes'}">
+      aria-current="${seleccion === t.id}" aria-label="Tramo ${entre(t.desde, t.hasta)}: ${s.estado ? ESTADOS[s.estado].nombre + por(s.motivo) : 'sin reportes'}">
       <span class="barra-t"></span><span class="info">${info}</span></button></li>`;
   });
   $('diagrama').innerHTML = h;
@@ -498,6 +535,7 @@ $('leyenda').innerHTML = Object.values(ESTADOS).map(e => `<span><i style="--c:${
   + `<span><i class="dud"></i>Sin confirmar</span><span><i style="--c:${SIN_DATOS}"></i>Sin reportes</span>`;
 $('diagrama').addEventListener('click', e => { const b = e.target.closest('[data-tramo]'); if (b) elegirTramo(b.dataset.tramo); });
 $('lineas').addEventListener('click', e => { const b = e.target.closest('[data-linea]'); if (b) elegirLinea(b.dataset.linea); });
+$('franja').addEventListener('click', e => { const b = e.target.closest('[data-linea]'); if (b) elegirLinea(b.dataset.linea); });
 function elegirLinea(id){ if (linea.id === id) return; linea = LINEA[id]; seleccion = null; marcarUrl(); pintar(); encuadrar(); }
 /** La URL y el título siguen a la línea elegida (enlaces para compartir: /linea-1, /linea-2). */
 function marcarUrl(){
@@ -514,12 +552,13 @@ function pintarResumen(){
   if (seleccion) {
     const e = estados[seleccion];
     c = colorDe(e.estado); num = e.personas || 0; b = `${linea.id} · ${tramoTxt(seleccion)}`;
-    s = !e.estado ? 'Sin reportes recientes' : e.nivel === 'oficial' ? `${ESTADOS[e.estado].nombre} · aviso oficial`
-      : `${ESTADOS[e.estado].nombre}${e.nivel === 'sin_confirmar' ? ' · sin confirmar' : ''} · ${haceCuanto(e.ultimo)}`;
+    s = !e.estado ? 'Sin reportes recientes' : e.nivel === 'oficial' ? `${ESTADOS[e.estado].nombre}${conMotivo(e.motivo)} · aviso oficial`
+      : `${ESTADOS[e.estado].nombre}${conMotivo(e.motivo)}${e.nivel === 'sin_confirmar' ? ' · sin confirmar' : ''} · ${haceCuanto(e.ultimo)}`;
     alerta = e.estado === 'detenido' && e.nivel !== 'sin_confirmar';
   } else if (res.tipo === 'problemas') {
     const g = principal; b = `${linea.id} · ${ESTADOS[g.estado].nombre} · ${EST[g.desde].nombre} – ${EST[g.hasta].nombre}`;
-    s = g.nivel === 'oficial' && !g.personas ? 'Aviso oficial de Línea 1' : `${g.personas === 1 ? 'persona lo reporta' : 'personas lo reportan'} · ${haceCuanto(g.ultimo)}`;
+    s = (g.motivo ? `${MOTIVOS[g.motivo].nombre} · ` : '')
+      + (g.nivel === 'oficial' && !g.personas ? `Aviso oficial de ${linea.nombre}` : `${g.personas === 1 ? 'persona lo reporta' : 'personas lo reportan'} · ${haceCuanto(g.ultimo)}`);
     alerta = g.estado === 'detenido';
   } else if (res.tipo === 'normal') { b = `${linea.id} · Funcionando con normalidad`; s = `personas en los últimos ${REGLAS.vigenciaMin} min`; }
   else { b = `${linea.id} · Sin reportes recientes`; s = '¿Estás en el tren? Cuéntanos cómo va'; }
@@ -670,9 +709,17 @@ sel.innerHTML = '<option value="">Elige el tramo…</option>' + red.lineas.map(l
   l.tramos.map(t => `<option value="${t.id}">${tramoTxt(t.id)}</option>`).join('')}</optgroup>`).join('');
 const DESC = {normal:'Avanza sin problemas', lento:'Demoras, avanza a ratos', detenido:'Parado más de 5 min', sin_servicio:'No pasan trenes'};
 $('opciones').innerHTML = Object.entries(ESTADOS).map(([k, e]) => `<button type="button" class="opcion" data-op="${k}" style="--c:${e.color}" aria-pressed="false"><b>${e.nombre}</b><span>${DESC[k]}</span></button>`).join('');
+// segundo paso, opcional: ¿por qué? (no se pregunta si va normal)
+let motivo = null;
+$('motivo-ops').innerHTML = [...Object.entries(MOTIVOS), ['', {nombre:'No sé'}]]
+  .map(([k, m]) => `<button type="button" data-mot="${k}" aria-pressed="${!k}">${m.nombre}</button>`).join('');
+const marcarMotivo = m => { motivo = m || null; document.querySelectorAll('[data-mot]').forEach(x => x.setAttribute('aria-pressed', x.dataset.mot === (m || ''))); };
+$('motivo-ops').addEventListener('click', e => { const b = e.target.closest('[data-mot]'); if (b) marcarMotivo(b.dataset.mot); });
 const listo = () => { $('enviar').disabled = !(sel.value && elegido); };
 $('opciones').addEventListener('click', e => { const b = e.target.closest('[data-op]'); if (!b) return;
-  elegido = b.dataset.op; document.querySelectorAll('[data-op]').forEach(x => x.setAttribute('aria-pressed', x === b)); listo(); });
+  elegido = b.dataset.op; document.querySelectorAll('[data-op]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  $('motivos').hidden = elegido === 'normal'; if (elegido === 'normal') marcarMotivo(null);
+  listo(); });
 /* ¿dónde estás? — con la ubicación se elige el tramo solo, usando la estación más cercana */
 const resEl = $('ubic-res'), opsEl = $('ubic-ops'), btnUbic = $('ubicarme');
 const PRECISION = {buena:300, mala:2000};   // metros (coords.accuracy del navegador)
@@ -737,6 +784,7 @@ function ubicarme(){
 /** Abre «¿Cómo va el tren?». Con `estacion` (enlace de un sticker: /e/gamarra) la deja elegida sin pedir la ubicación. */
 async function abrirReporte(estacion = null){
   elegido = null; ubicado = false; msg.textContent = ''; limpiarUbic(); marcarTramo(seleccion || '');
+  marcarMotivo(null); $('motivos').hidden = true;
   document.querySelectorAll('[data-op]').forEach(x => x.setAttribute('aria-pressed', false)); listo(); dlg.showModal();
   if (estacion) {
     const l = red.lineas.find(x => x.estaciones.includes(estacion));
@@ -754,7 +802,7 @@ $('cancelar').addEventListener('click', () => dlg.close());
 btnUbic.addEventListener('click', ubicarme);
 $('form').addEventListener('submit', async e => {
   e.preventDefault(); if (!sel.value || !elegido) return;
-  const rep = {tramo:sel.value, estado:elegido, t:ahora(), autor, ubicado};
+  const rep = {tramo:sel.value, estado:elegido, motivo:elegido === 'normal' ? null : motivo, t:ahora(), autor, ubicado};
   const boton = $('enviar'); boton.disabled = true; boton.textContent = 'Enviando…';
   let aviso = `Gracias. Tu reporte cuenta durante ${REGLAS.vigenciaMin} minutos.`;
   try {
