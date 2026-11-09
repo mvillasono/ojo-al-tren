@@ -120,18 +120,10 @@
     #map{left:var(--ancho)}
   }
 
-  /* ---------- selector de línea ---------- */
-  .sec-lineas{padding:14px 20px}
-  .lineas{display:grid;grid-template-columns:1fr;gap:6px}
-  .linea-btn{display:grid;grid-template-columns:34px 1fr auto;gap:0 12px;align-items:center;width:100%;padding:9px 12px;
-    border:1px solid var(--linea-2);border-radius:2px}
-  .linea-btn .cod{font-size:20px;font-weight:600;letter-spacing:-.02em}
-  .linea-btn .ruta{font-size:13px;color:var(--tenue);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .linea-btn .est-l{display:flex;align-items:center;gap:6px;font-family:"Geist Mono",monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase}
-  .linea-btn .est-l .punto{width:6px;height:6px}
-  .linea-btn[aria-pressed=true]{background:var(--texto);color:var(--fondo);border-color:var(--texto)}
-  .linea-btn[aria-pressed=true] .ruta{color:#4A4A50}
-  .linea-btn[aria-pressed=true] .punto{box-shadow:0 0 0 1.5px var(--fondo)}
+  /* ---------- encabezado del panel: qué línea se ve (el estado y el cambio de línea están en la franja) ---------- */
+  .sec-linea{display:flex;align-items:baseline;gap:12px;padding:16px 20px}
+  .sec-linea .cod{font-size:20px;font-weight:600;letter-spacing:-.02em}
+  .sec-linea .ruta{min-width:0;font-size:13px;color:var(--tenue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   /* ---------- punto de estado ---------- */
   .punto{flex:0 0 auto;display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c,var(--apagado))}
@@ -267,7 +259,7 @@
 <aside class="panel" id="panel" data-estado="cerrado" aria-label="Estado de la línea">
   <button class="resumen" id="resumen" aria-expanded="false" aria-controls="cuerpo"></button>
   <div class="cuerpo" id="cuerpo">
-    <section class="sec sec-lineas"><div class="lineas" id="lineas" role="tablist" aria-label="Línea"></div></section>
+    <section class="sec sec-linea" id="linea-cab"></section>
     <section class="sec" id="estado"></section>
     <section class="sec">
       <button class="btn ancho" data-reportar>Estoy en el tren: reportar cómo va</button>
@@ -442,7 +434,7 @@ $('demo').addEventListener('click', e => {
 const panel = $('panel'), resumenEl = $('resumen');
 let seleccion = null, principal = null, ultimo = null;
 
-/** Color y texto corto del estado de una línea completa (para el selector). */
+/** Color y texto corto del estado de una línea completa (para la franja de arriba). */
 function estadoCorto(l, est){
   const r = resumen(l, est);
   if (r.tipo === 'problemas') {
@@ -462,10 +454,7 @@ function pintar(){
   const deLinea = new Set(linea.tramos.map(t => t.id));
   const vigL = vigentes().filter(r => deLinea.has(r.tramo));
   const personasVig = new Set(vigL.map(r => r.autor)).size;
-  $('lineas').innerHTML = red.lineas.map(l => { const e = estadoCorto(l, porLinea[l.id]);
-    return `<button class="linea-btn" role="tab" data-linea="${l.id}" aria-pressed="${l === linea}" aria-selected="${l === linea}">
-      <span class="cod">${l.id}</span><span class="ruta">${rutaTxt(l)}</span>
-      <span class="est-l" ${e.alerta ? 'data-alerta' : ''}><span class="punto" style="--c:${e.c}"></span>${e.txt}</span></button>`; }).join('');
+  $('linea-cab').innerHTML = `<span class="cod">${linea.id}</span><span class="ruta">${linea.nombre} · ${rutaTxt(linea)}</span>`;
   // franja de arriba: el estado de todas las líneas de un vistazo (tocar una la muestra)
   $('franja').innerHTML = red.lineas.map(l => { const e = estadoCorto(l, porLinea[l.id]);
     return `<button class="sit" data-linea="${l.id}" data-tipo="${e.tipo}" aria-pressed="${l === linea}" style="--c:${e.c}"
@@ -534,7 +523,6 @@ function pintar(){
 $('leyenda').innerHTML = Object.values(ESTADOS).map(e => `<span><i style="--c:${e.color}"></i>${e.nombre}</span>`).join('')
   + `<span><i class="dud"></i>Sin confirmar</span><span><i style="--c:${SIN_DATOS}"></i>Sin reportes</span>`;
 $('diagrama').addEventListener('click', e => { const b = e.target.closest('[data-tramo]'); if (b) elegirTramo(b.dataset.tramo); });
-$('lineas').addEventListener('click', e => { const b = e.target.closest('[data-linea]'); if (b) elegirLinea(b.dataset.linea); });
 $('franja').addEventListener('click', e => { const b = e.target.closest('[data-linea]'); if (b) elegirLinea(b.dataset.linea); });
 function elegirLinea(id){ if (linea.id === id) return; linea = LINEA[id]; seleccion = null; marcarUrl(); pintar(); encuadrar(); }
 /** La URL y el título siguen a la línea elegida (enlaces para compartir: /linea-1, /linea-2). */
