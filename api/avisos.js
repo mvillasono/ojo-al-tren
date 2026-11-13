@@ -17,8 +17,9 @@ let guardado = null;   // { t, avisos } — lo último bueno, por instancia
 
 const ENTIDADES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', hellip: '…', ndash: '–', mdash: '—', laquo: '«', raquo: '»',
   aacute: 'á', eacute: 'é', iacute: 'í', oacute: 'ó', uacute: 'ú', ntilde: 'ñ', Aacute: 'Á', Eacute: 'É', Iacute: 'Í', Oacute: 'Ó', Uacute: 'Ú', Ntilde: 'Ñ', uuml: 'ü', iexcl: '¡', iquest: '¿' };
-export const texto = s => String(s || '')
-  .replace(/<[^>]*>/g, '')
+// quita las etiquetas: de cada «<» hasta su «>» (sin cierre, hasta el final)
+const sinEtiquetas = s => s.split('<').map((p, i) => i === 0 ? p : p.slice(p.indexOf('>') + 1 || p.length)).join('');
+export const texto = s => sinEtiquetas(String(s || ''))
   .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
   .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
   .replace(/&([a-z]+);/gi, (m, n) => ENTIDADES[n] ?? ENTIDADES[n.toLowerCase()] ?? m)
