@@ -22,6 +22,7 @@ export const texto = s => String(s || '')
   .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
   .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
   .replace(/&([a-z]+);/gi, (m, n) => ENTIDADES[n] ?? ENTIDADES[n.toLowerCase()] ?? m)
+  .replace(/[<>]/g, '')   // ni restos de etiquetas (<<b>script>) ni &lt; decodificados: el resultado es solo texto
   .replace(/\s+/g, ' ').trim();
 
 // solo imágenes y enlaces de lineauno.pe, por https

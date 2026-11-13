@@ -30,6 +30,7 @@ test('separa el tipo del título y decodifica las entidades', () => {
   assert.equal(b.titulo, 'Viajes gratuitos');
   assert.equal(a.fecha, '2026-11-10T17:15:04.000Z');
   assert.equal(texto('&#8220;Hola&#8221; &amp; adi&#243;s'), '“Hola” & adiós');
+  assert.equal(texto('<<b>script>alert(1)<</b>/script> &lt;img&gt;'), 'scriptalert(1)/script img', 'nunca devuelve < ni >');
 });
 
 test('elige la imagen de ~768 px del comunicado, nunca el placeholder', () => {
