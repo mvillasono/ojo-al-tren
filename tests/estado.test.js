@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { estadoTramo, estadoLinea, resumen, tramoCercano, tramoCercanoRed, ubicarEnRed } from '../lib/estado.js';
+import { estadoTramo, estadoLinea, resumen, tramoCercano, tramoCercanoRed, ubicarEnRed, estadoEstacion, estadoEstaciones } from '../lib/estado.js';
 
 const AHORA = Date.parse('2026-11-08T18:00:00-05:00');
 const hace = min => AHORA - min * 60_000;
@@ -194,4 +194,33 @@ test('el resumen lleva el motivo que más tramos comparten', () => {
   const res = resumen(linea, estadoLinea(linea, rs, AHORA));
   assert.equal(res.grupos.length, 1);
   assert.equal(res.grupos[0].motivo, 'falla');
+});
+
+/* ---------- estaciones cerradas (las reportan los usuarios) ---------- */
+const re = (estado, min, autor, extra = {}) => ({ estacion: 'l1-la-cultura', estado, t: hace(min), autor, ...extra });
+
+test('estación: una persona la ve cerrada → «¿cerrada?», dos la confirman', () => {
+  assert.deepEqual(Object.values(pick(estadoEstacion([re('cerrada', 5, 'a')], AHORA))), ['cerrada', 'sin_confirmar', 1]);
+  assert.deepEqual(Object.values(pick(estadoEstacion([re('cerrada', 30, 'a'), re('cerrada', 2, 'b')], AHORA))), ['cerrada', 'confirmado', 2]);
+});
+function pick(e) { return { estado: e.estado, nivel: e.nivel, personas: e.personas }; }
+
+test('estación: un cierre dura más que un reporte de tramo (60 min), luego caduca', () => {
+  assert.equal(estadoEstacion([re('cerrada', 50, 'a'), re('cerrada', 45, 'b')], AHORA).nivel, 'confirmado');
+  assert.equal(estadoEstacion([re('cerrada', 65, 'a'), re('cerrada', 61, 'b')], AHORA).nivel, 'sin_reportes');
+});
+
+test('estación: quien avisa que ya abrió le gana a cierres más viejos', () => {
+  const e = estadoEstacion([re('cerrada', 40, 'a'), re('cerrada', 35, 'b'), re('abierta', 2, 'c'), re('abierta', 1, 'd')], AHORA);
+  assert.equal(e.estado, null); assert.equal(e.abierta, true);
+  // la misma persona que dijo cerrada y luego abierta: cuenta lo último
+  assert.equal(estadoEstacion([re('cerrada', 10, 'a'), re('abierta', 1, 'a')], AHORA).estado, null);
+});
+
+test('estación: los reportes de estación no ensucian los tramos, y se agrupan por estación', () => {
+  const todos = [re('cerrada', 3, 'a'), re('cerrada', 2, 'b'), r('detenido', 1, 'c')];
+  const est = estadoEstaciones(linea, todos, AHORA);
+  assert.equal(est['l1-la-cultura'].nivel, 'confirmado');
+  assert.equal(est['l1-gamarra'].nivel, 'sin_reportes');
+  assert.equal(estadoLinea(linea, todos, AHORA)['l1-14'].personas, 1);
 });

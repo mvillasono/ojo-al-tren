@@ -67,3 +67,26 @@ test('el motivo es opcional, se guarda y se valida', async () => {
   assert.equal((await llamar('POST', rep({ autor: 'motivo-1234', tramo: 'l1-22', motivo: 7 }), { ip: '3.3.3.3' })).status, 400);
   assert.equal((await llamar('POST', rep({ autor: 'motivo-1234', tramo: 'l1-22', estado: 'normal', motivo: 'falla' }), { ip: '3.3.3.3' })).status, 400);
 });
+
+/* ---------- estaciones cerradas ---------- */
+const est = (o = {}) => ({ estacion: 'l1-la-cultura', estado: 'cerrada', ubicado: true, autor: 'est-12345678', ...o });
+
+test('estación cerrada: se guarda, la ve cualquiera en el GET y no se mezcla con los tramos', async () => {
+  const p = await llamar('POST', est(), { ip: '4.4.4.4' });
+  assert.equal(p.status, 201);
+  assert.equal(p.d.reporte.estacion, 'l1-la-cultura');
+  const g = await llamar('GET');
+  const r = g.d.estaciones.find(x => x.id === p.d.reporte.id);
+  assert.equal(r.estado, 'cerrada'); assert.notEqual(r.autor, 'est-12345678');
+  assert.ok(!g.d.reportes.some(x => x.estacion), 'los tramos no traen reportes de estación');
+});
+
+test('estación: valida y frena la repetición', async () => {
+  assert.equal((await llamar('POST', est(), { ip: '4.4.4.4' })).status, 429, 'la misma estación al instante');
+  assert.equal((await llamar('POST', est({ estado: 'abierta', estacion: 'l1-gamarra' }), { ip: '4.4.4.4' })).status, 201);
+  assert.equal((await llamar('POST', est({ estacion: 'l1-narnia' }))).status, 400);
+  assert.equal((await llamar('POST', est({ estacion: 7 }))).status, 400);
+  assert.equal((await llamar('POST', est({ estado: 'detenido', autor: 'otro-est-123' }))).status, 400);
+  assert.equal((await llamar('POST', est({ estado: 'toString', autor: 'otro-est-123' }))).status, 400);
+  assert.equal((await llamar('POST', est({ autor: '<x>' }))).status, 400);
+});
