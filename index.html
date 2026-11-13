@@ -73,6 +73,31 @@
   .barra .celda.gh svg{width:19px;height:19px;flex:0 0 auto}
   .barra .celda.gh .mono{color:inherit;font-size:11px;letter-spacing:.2em}
   @media (max-width:520px){.barra .celda.gh{padding:0 16px}.barra .celda.gh .mono{display:none}}
+  .barra .celda.avi{border-right:0;border-left:1px solid var(--linea);color:var(--tenue);gap:9px;padding:0 18px}
+  .barra .celda.avi:hover{color:var(--texto);background:var(--sup)}
+  .barra .celda.avi .mono{color:inherit;font-size:11px;letter-spacing:.2em}
+  .barra .celda.avi .ico{position:relative;display:flex}
+  .barra .celda.avi svg{width:18px;height:18px}
+  .barra .celda.avi .pt[hidden]{display:none}
+  .barra .celda.avi .pt{position:absolute;top:-1px;right:-2px;width:6px;height:6px;border-radius:50%;background:var(--lento);box-shadow:0 0 0 2px var(--fondo)}
+  @media (max-width:520px){.barra .celda.gh{display:none}.barra .celda.avi{padding:0 14px;gap:8px}}
+  .barra .celda.avi .vib{display:flex;align-items:center;gap:inherit}
+  /* hay un comunicado sin ver: vibra cada 3 s, la campana suena, el fondo late en ámbar y el punto echa ondas */
+  .barra .celda.avi.hay{color:var(--texto);animation:latir 3s ease-in-out infinite}
+  .barra .celda.avi.hay .vib{animation:vibra 3s linear infinite}
+  .barra .celda.avi.hay svg{transform-origin:50% 8%;animation:campana 3s ease-in-out infinite}
+  .barra .celda.avi.hay .pt::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--lento);animation:onda 1.5s ease-out infinite}
+  /* llamada de atención de una vez (al entrar y al cerrar los comunicados): «aquí están» */
+  .barra .celda.avi.llama{animation:destello 1.6s ease-out}
+  .barra .celda.avi.llama .vib{animation:vibra-ya .55s linear 3}
+  .barra .celda.avi.llama svg{transform-origin:50% 8%;animation:campana-ya .55s ease-in-out 3}
+  @keyframes vibra{0%,70%,100%{translate:0}72%,76%,80%,84%{translate:-2px 0}74%,78%,82%,86%{translate:2px 0}88%{translate:0}}
+  @keyframes vibra-ya{0%,100%{translate:0}12%,37%,62%{translate:-3px 0}25%,50%,75%{translate:3px 0}87%{translate:-1px 0}}
+  @keyframes campana{0%,70%,100%{rotate:0deg}73%{rotate:18deg}76%{rotate:-16deg}79%{rotate:12deg}82%{rotate:-8deg}85%{rotate:4deg}88%{rotate:0deg}}
+  @keyframes campana-ya{0%,100%{rotate:0deg}20%{rotate:18deg}40%{rotate:-16deg}60%{rotate:10deg}80%{rotate:-5deg}}
+  @keyframes latir{0%,60%,100%{background:transparent}75%{background:color-mix(in srgb,var(--lento) 16%,transparent)}}
+  @keyframes destello{0%{background:color-mix(in srgb,var(--lento) 28%,transparent)}100%{background:transparent}}
+  @keyframes onda{0%{transform:scale(1);opacity:.8}100%{transform:scale(3.4);opacity:0}}
   .logo-txt{font-weight:800;font-size:19px;line-height:1;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:transparent;
     background:repeating-linear-gradient(90deg,var(--texto) 0 1.3px,transparent 1.3px 2.6px);-webkit-background-clip:text;background-clip:text}
   @media (max-width:520px){.barra .lema{display:none}}
@@ -173,6 +198,19 @@
   .diagrama .tramo .info b{color:var(--c);font-weight:500}
   .diagrama .tramo:hover .info,.diagrama .tramo[aria-current=true] .info{color:var(--texto)}
   .diagrama .tramo[aria-current=true]{background:var(--sup)}
+  /* estación cerrada (la reportan los usuarios): nodo rojo tachado + línea con quién lo dice y botones para confirmar */
+  .diagrama .est.cerrada .nodo{width:13px;height:13px;background:var(--detenido);box-shadow:0 0 0 3px var(--panel),0 0 10px 1px color-mix(in srgb,var(--detenido) 60%,transparent)}
+  .diagrama .est.cerrada.duda .nodo{background:var(--panel);border:2px dashed var(--detenido);box-shadow:0 0 0 3px var(--panel)}
+  .diagrama .est.cerrada .n{color:var(--detenido);font-weight:600}
+  .diagrama .cierre{grid-column:2 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:2px 0 6px;
+    font-family:"Geist Mono",monospace;font-size:11.5px;color:var(--tenue)}
+  .diagrama .cierre b{color:var(--detenido);font-weight:500}
+  .diagrama .cierre button{height:26px;padding:0 9px;border:1px solid var(--linea-2);border-radius:2px;font-family:Geist,system-ui,sans-serif;font-size:12px;color:var(--texto)}
+  .diagrama .cierre button:hover{background:var(--sup)}
+  .leyenda .cerr{width:9px;height:9px;border-radius:50%;background:var(--detenido)}
+  .opcion[data-op=cerrada]{grid-column:1 / -1}
+  .est-cierre{margin:-8px 0 18px}
+  .est-cierre .ubic-ops{margin:10px 0 8px}
   .leyenda{display:flex;flex-wrap:wrap;gap:8px 16px;margin:16px 0 0;font-size:12px;color:var(--tenue)}
   .leyenda i{display:inline-block;width:16px;height:3px;border-radius:1px;margin-right:6px;vertical-align:middle;background:var(--c)}
   .leyenda .dud{background:repeating-linear-gradient(90deg,var(--tenue) 0 4px,transparent 4px 7px)}
@@ -227,6 +265,47 @@
   .motivo-ops button[aria-pressed=true]{background:var(--texto);color:var(--fondo);border-color:var(--texto)}
   .dlg .acciones{display:flex;gap:6px}
   .dlg .acciones .btn{flex:1}
+
+  /* ---------- comunicados oficiales de Línea 1 (de lineauno.pe), con nuestro diseño ---------- */
+  #dlg-avisos{width:min(560px,calc(100% - 24px))}
+  #dlg-avisos .dlg{padding:0}
+  .avisos-cab{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;
+    background:var(--panel);border-bottom:1px solid var(--linea)}
+  .avisos-cab h3{margin:2px 0 0;font-size:20px}
+  .avisos-cab .x{align-self:flex-start;padding:6px 0;font-family:"Geist Mono",monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--tenue)}
+  .avisos-cab .x:hover{color:var(--texto)}
+  .avisos{list-style:none;margin:0;padding:0}
+  .aviso{padding:18px 20px 20px;border-bottom:1px solid var(--linea)}
+  .aviso .meta{display:flex;align-items:center;gap:10px}
+  .aviso .meta .nuevo{padding:2px 6px;border-radius:2px;background:var(--lento);color:var(--fondo);letter-spacing:.16em}
+  .aviso h4{margin:6px 0 12px;font-size:16.5px;font-weight:600;line-height:1.35;letter-spacing:-.01em}
+  .aviso .img{display:block;width:100%;padding:0;border:1px solid var(--linea);border-radius:2px;overflow:hidden;background:var(--sup);cursor:zoom-in}
+  .aviso img{display:block;width:100%;height:auto;aspect-ratio:auto 1/1}   /* casi todos son cuadrados: reserva el lugar mientras carga */
+  .aviso.plegado .img{display:none}
+  .aviso .ver{display:inline-block;margin-top:-4px;font-size:13px;color:var(--tenue);text-decoration:underline;text-underline-offset:3px}
+  .aviso:not(.plegado) button.ver{display:none}
+  .aviso .acc{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:12px}
+  .aviso.plegado .acc{margin-top:6px}
+  .aviso .wa{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;border:1px solid var(--linea-2);border-radius:2px;
+    font-size:13.5px;color:var(--texto);text-decoration:none}
+  .aviso .wa:hover{background:var(--sup)}
+  .aviso .wa svg{width:16px;height:16px;flex:0 0 auto;color:#25D366}
+  .ult-aviso{display:flex;align-items:flex-start;gap:12px;width:100%;padding:12px;border:1px solid var(--linea-2);border-radius:2px;background:var(--fondo)}
+  .ult-aviso:hover{background:var(--sup)}
+  .ult-aviso img{flex:0 0 auto;width:56px;height:56px;object-fit:cover;border-radius:2px;background:var(--sup)}
+  .ult-aviso b{display:block;font-size:14px;font-weight:500;line-height:1.35}
+  .ult-aviso span{display:block;margin-top:4px;font-size:12px;color:var(--tenue)}
+  .aviso{scroll-margin-top:84px}   /* que la cabecera fija del diálogo no lo tape */
+  .aviso.foco{background:var(--sup)}
+  .avisos-msg{margin:0;padding:28px 20px;color:var(--tenue);font-size:14px}
+  .avisos-pie{margin:0;padding:14px 20px 18px;font-size:12px;color:var(--apagado);line-height:1.5}
+  .avisos-pie a{color:var(--tenue)}
+  /* imagen a pantalla completa: se lee el comunicado sin salir de la web */
+  .lupa{position:fixed;inset:0;z-index:5;display:flex;overflow:auto;padding:56px 12px 12px;background:rgba(0,0,0,.94);cursor:zoom-out}
+  .lupa[hidden]{display:none}
+  .lupa img{display:block;width:min(100%,1080px);height:auto;margin:auto;border-radius:2px}
+  .lupa .x{position:fixed;top:12px;right:12px;padding:8px 12px;border-radius:2px;background:var(--texto);color:var(--fondo);
+    font-family:"Geist Mono",monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase}
   .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:20;max-width:calc(100% - 32px);
     padding:12px 16px;border-radius:2px;background:var(--texto);color:var(--fondo);font-weight:500;font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s}
   .toast.ver{opacity:1}
@@ -251,6 +330,7 @@
     <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
     <span class="mono">Colabora</span>
   </a>
+  <button class="celda avi" id="btn-avisos" aria-haspopup="dialog" aria-label="Avisos oficiales de Línea 1" title="Avisos oficiales de Línea 1"><span class="vib"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="pt" id="avisos-pt" hidden></span></span><span class="mono">Avisos</span></span></button>
   <button class="celda inv" data-reportar>Reportar</button>
 </header>
 <nav class="franja" id="franja" aria-label="Situación de las líneas"></nav>
@@ -264,6 +344,10 @@
     <section class="sec">
       <button class="btn ancho" data-reportar>Estoy en el tren: reportar cómo va</button>
       <p class="ayuda">Anónimo. Tu reporte cuenta durante 20 minutos.</p>
+    </section>
+    <section class="sec" id="sec-avisos" hidden>
+      <div class="sec-cab"><span class="mono">Comunicados de Línea 1</span><button type="button" class="mono" data-avisos>Ver todos</button></div>
+      <button type="button" class="ult-aviso" id="ult-aviso" data-avisos></button>
     </section>
     <section class="sec">
       <div class="sec-cab"><span class="mono" id="diag-tit">Tramo por tramo</span><span class="mono">Toca para ver</span></div>
@@ -302,6 +386,11 @@
     <p class="msg" id="msg-ubic"></p>
     <span class="mono">¿Cómo está?</span>
     <div class="opciones" id="opciones"></div>
+    <div class="est-cierre" id="est-cierre" hidden>
+      <span class="mono">¿Qué estación está cerrada?</span>
+      <div class="ubic-ops" id="est-ops" role="group" aria-label="Estación"></div>
+      <select id="sel-estacion" aria-label="Elige la estación"></select>
+    </div>
     <div class="motivos" id="motivos" hidden>
       <span class="mono">¿Sabes por qué? <small>· opcional</small></span>
       <div class="motivo-ops" id="motivo-ops" role="group" aria-label="Motivo"></div>
@@ -312,12 +401,23 @@
     </div>
   </form>
 </dialog>
+<dialog id="dlg-avisos" aria-labelledby="avisos-tit">
+  <div class="dlg">
+    <div class="avisos-cab">
+      <div><span class="mono">Avisos oficiales</span><h3 id="avisos-tit">Comunicados de Línea 1</h3></div>
+      <button type="button" class="x" id="avisos-cerrar">Cerrar</button>
+    </div>
+    <ol class="avisos" id="avisos"></ol>
+    <p class="avisos-pie">Publicados por Línea 1 en <a href="https://www.lineauno.pe/noticias/" target="_blank" rel="noopener">lineauno.pe</a>. Ojo al Tren no está afiliado: solo los reunimos aquí para que no tengas que buscarlos.</p>
+  </div>
+  <div class="lupa" id="lupa" hidden><button type="button" class="x">Cerrar</button><img alt=""></div>
+</dialog>
 <div class="toast" id="toast" role="status"></div>
 
 <!--__ANALITICA__-->
 <script src="/config.js" onerror="window.OAT_CONFIG = {}"></script>
 <script type="module">
-import { ESTADOS, MOTIVOS, SIN_DATOS, REGLAS, estadoLinea, resumen, ubicarEnRed } from '/lib/estado.js';
+import { ESTADOS, MOTIVOS, SIN_DATOS, REGLAS, estadoLinea, resumen, ubicarEnRed, ESTADOS_ESTACION, estadoEstaciones } from '/lib/estado.js';
 
 const CFG = window.OAT_CONFIG || {};
 const MAPBOX = CFG.mapProvider === 'mapbox' && /^pk\./.test(CFG.mapboxToken || '');
@@ -367,9 +467,11 @@ async function cargar(){
     if (!r.ok) throw new Error(r.status);
     const d = await r.json();
     relojServidor = Math.abs(d.ahora - Date.now()) > 60_000 ? d.ahora - Date.now() : 0;
-    const vistos = new Set(d.reportes.map(x => x.id));
+    const nuevos = [...d.reportes, ...(d.estaciones || [])];
+    const clave = x => (x.estacion ? 'e' : 't') + x.id;   // tramos y estaciones vienen de tablas distintas: los id pueden repetirse
+    const vistos = new Set(nuevos.map(clave));
     // los recién enviados pueden faltar unos segundos en la respuesta (la CDN la comparte 10 s)
-    remotos = [...d.reportes, ...remotos.filter(x => !vistos.has(x.id) && ahora() - x.t < 60_000)];
+    remotos = [...nuevos, ...remotos.filter(x => !vistos.has(clave(x)) && ahora() - x.t < 60_000)];
     conectado = true;
     if (pendientes.length) reenviar();
   } catch (_) { conectado = false; }
@@ -377,7 +479,8 @@ async function cargar(){
 }
 async function enviar(rep){
   const r = await fetch('/api/reportes', {method:'POST', headers:{'content-type':'application/json'},
-    body:JSON.stringify({tramo:rep.tramo, estado:rep.estado, motivo:rep.motivo ?? null, ubicado:rep.ubicado, autor})});
+    body:JSON.stringify(rep.estacion ? {estacion:rep.estacion, estado:rep.estado, ubicado:rep.ubicado, autor}
+                                     : {tramo:rep.tramo, estado:rep.estado, motivo:rep.motivo ?? null, ubicado:rep.ubicado, autor})});
   const d = await r.json().catch(() => ({}));
   if (r.status === 201) { remotos.push(d.reporte); return {ok:true}; }
   return {ok:false, rechazado:r.status >= 400 && r.status < 500 && r.status !== 404, error:d.error};
@@ -413,6 +516,9 @@ const ESCENARIOS = {
                                                    ...generar(rango('L2', 'l2-ovalo-santa-anita', 'l2-ovalo-santa-anita'), 'normal', 2, 10)]},
   oficial:  {nombre:'Aviso oficial',    gen:() => [...rango('L1', 'l1-los-jardines', 'l1-santa-rosa').map(t => ({tramo:t, estado:'sin_servicio', motivo:'falla', t:ahora() - 25 * 60000, autor:'linea1', fuente:'oficial'})),
                                                    ...generar(cada('L1', 3, 19), 'normal', 2, 15), ...l2Normal()]},
+  cerrada:  {nombre:'Estación cerrada', gen:() => [...['a', 'b', 'c'].map((x, i) => ({estacion:'l1-la-cultura', estado:'cerrada', t:ahora() - (40 - i * 15) * 60000, autor:`demo-cul-${x}`, ubicado:i !== 1})),
+                                                   {estacion:'l1-gamarra', estado:'cerrada', t:ahora() - 6 * 60000, autor:'demo-gam-a', ubicado:false},
+                                                   ...generar(cada('L1', 2), 'normal', 2, 15), ...l2Normal()]},
   dudas:    {nombre:'Reportes sueltos', gen:() => [...generar(rango('L1', 'l1-san-juan', 'l1-san-juan'), 'detenido', 1, 6), ...generar(rango('L1', 'l1-el-angel', 'l1-el-angel'), 'lento', 1, 4),
                                                    ...generar(rango('L1', 'l1-el-angel', 'l1-el-angel'), 'normal', 1, 9), ...generar(rango('L2', 'l2-colectora-industrial', 'l2-colectora-industrial'), 'detenido', 1, 3)]},
   vacio:    {nombre:'Sin reportes',     gen:() => []},
@@ -435,8 +541,9 @@ const panel = $('panel'), resumenEl = $('resumen');
 let seleccion = null, principal = null, ultimo = null;
 
 /** Color y texto corto del estado de una línea completa (para la franja de arriba). */
-function estadoCorto(l, est){
+function estadoCorto(l, est, estEst = {}){
   const r = resumen(l, est);
+  const cerradas = l.estaciones.filter(e => estEst[e.id]?.nivel === 'confirmado');
   if (r.tipo === 'problemas') {
     const g = [...r.grupos].sort((a, b) => ESTADOS[b.estado].orden - ESTADOS[a.estado].orden)[0];
     const otros = r.grupos.length - 1;
@@ -444,19 +551,27 @@ function estadoCorto(l, est){
       donde:`${g.motivo ? `${MOTIVOS[g.motivo].nombre} · ` : ''}${EST[g.desde].nombre} – ${EST[g.hasta].nombre}${otros ? ` y ${plural(otros, 'zona más', 'zonas más')}` : ''}`,
       voz:`${ESTADOS[g.estado].nombre}${por(g.motivo)} ${entre(g.desde, g.hasta)}${otros ? ` y en ${plural(otros, 'zona más', 'zonas más')}` : ''}`};
   }
+  if (cerradas.length) {
+    const nombres = cerradas.map(e => e.nombre).join(', ');
+    return {tipo:'problemas', c:ESTADOS_ESTACION.cerrada.color, txt:cerradas.length > 1 ? 'Estaciones cerradas' : 'Estación cerrada', donde:nombres,
+      voz:`${cerradas.length > 1 ? 'estaciones cerradas' : 'estación cerrada'}: ${nombres}; el tren no para ahí`};
+  }
   return r.tipo === 'normal' ? {tipo:r.tipo, c:ESTADOS.normal.color, txt:'Normal', donde:'', voz:'funcionando con normalidad'}
                              : {tipo:r.tipo, c:'var(--apagado)', txt:'Sin reportes', donde:'', voz:'sin reportes recientes'};
 }
 function pintar(){
   const porLinea = Object.fromEntries(red.lineas.map(l => [l.id, estadoLinea(l, todos(), ahora())]));
-  const estados = porLinea[linea.id];
+  const porLineaEst = Object.fromEntries(red.lineas.map(l => [l.id, estadoEstaciones(l, todos(), ahora())]));
+  const estados = porLinea[linea.id], estEst = porLineaEst[linea.id];
+  const cierres = linea.estaciones.filter(e => estEst[e.id].estado === 'cerrada');
   const res = resumen(linea, estados);
+  const cierreTitular = res.tipo !== 'problemas' ? cierres.find(e => estEst[e.id].nivel === 'confirmado') : null;
   const deLinea = new Set(linea.tramos.map(t => t.id));
   const vigL = vigentes().filter(r => deLinea.has(r.tramo));
   const personasVig = new Set(vigL.map(r => r.autor)).size;
   $('linea-cab').innerHTML = `<span class="cod">${linea.id}</span><span class="ruta">${linea.nombre} · ${rutaTxt(linea)}</span>`;
   // franja de arriba: el estado de todas las líneas de un vistazo (tocar una la muestra)
-  $('franja').innerHTML = red.lineas.map(l => { const e = estadoCorto(l, porLinea[l.id]);
+  $('franja').innerHTML = red.lineas.map(l => { const e = estadoCorto(l, porLinea[l.id], porLineaEst[l.id]);
     return `<button class="sit" data-linea="${l.id}" data-tipo="${e.tipo}" aria-pressed="${l === linea}" style="--c:${e.c}"
       aria-label="${l.nombre}: ${e.voz}"><span class="punto" ${e.alerta ? 'data-alerta' : ''}></span><span class="cod">${l.id}</span>
       <span class="est">${e.txt}</span>${e.donde ? `<span class="donde">${e.donde}</span>` : ''}</button>`; }).join('');
@@ -479,6 +594,12 @@ function pintar(){
       : `${g.personas === 1 ? 'persona reporta' : 'personas reportan'} el tren <b>${ESTADOS[g.estado].nombre.toLowerCase()}</b>${por(g.motivo)} entre <b>${EST[g.desde].nombre}</b> y <b>${EST[g.hasta].nombre}</b>`;
     meta = `<span class="sello">${g.nivel === 'oficial' ? 'Oficial' : 'Confirmado'}</span>Último reporte ${haceCuanto(g.ultimo)}`;
     chips = res.grupos.filter(x => x !== g).map(x => `<span class="chip" style="--c:${ESTADOS[x.estado].color}"><span class="punto"></span>${ESTADOS[x.estado].nombre}${conMotivo(x.motivo)} · ${EST[x.desde].nombre} – ${EST[x.hasta].nombre}</span>`).join('');
+  } else if (cierreTitular) {
+    // sin problemas en los tramos pero con una estación cerrada confirmada: esa es la noticia
+    const x = estEst[cierreTitular.id];
+    c = ESTADOS_ESTACION.cerrada.color; ceja = 'Estación cerrada · confirmado'; cifra = x.personas;
+    dice = `${x.personas === 1 ? 'persona dice' : 'personas dicen'} que la estación <b>${cierreTitular.nombre}</b> está <b>cerrada</b>: el tren pasa, pero no para ahí`;
+    meta = `<span class="sello">Confirmado</span>Último reporte ${haceCuanto(x.ultimo)}`;
   } else if (res.tipo === 'normal') {
     c = ESTADOS.normal.color; ceja = 'En vivo · funcionando'; cifra = personasVig;
     dice = `${personasVig === 1 ? 'persona dice' : 'personas dicen'} que la ${linea.nombre} funciona <b>con normalidad</b>`;
@@ -487,6 +608,9 @@ function pintar(){
     c = 'var(--apagado)'; ceja = 'Sin reportes'; cifra = 0;
     dice = `reportes en los últimos ${REGLAS.vigenciaMin} min. <b>¿Estás en el tren?</b> Cuéntanos cómo va.`;
   }
+  // estaciones cerradas: chip propio (el tren pasa, pero no para); la del titular no se repite
+  chips = cierres.filter(e => e !== cierreTitular).map(e => { const x = estEst[e.id], duda = x.nivel === 'sin_confirmar';
+    return `<span class="chip" style="--c:${ESTADOS_ESTACION.cerrada.color}"><span class="punto"></span>${duda ? '¿Estación cerrada?' : 'Estación cerrada'} · ${e.nombre}</span>`; }).join('') + chips;
   chips += dudosos.map(t => `<span class="chip" style="--c:${ESTADOS[estados[t.id].estado].color}"><span class="punto"></span>${ESTADOS[estados[t.id].estado].nombre}?${conMotivo(estados[t.id].motivo)} · ${EST[t.desde].nombre} – ${EST[t.hasta].nombre}</span>`).join('');
   $('estado').innerHTML = `<div class="ceja" ${principal && principal.estado === 'detenido' ? 'data-alerta' : ''} style="--c:${c}">
       <span class="punto"></span><span class="mono" style="color:var(--texto)">${ceja}</span></div>
@@ -500,7 +624,11 @@ function pintar(){
   let h = '';
   linea.estaciones.forEach((e, i) => {
     const ext = i === 0 || i === linea.estaciones.length - 1;
-    h += `<li class="est${ext ? ' extremo' : ''}"><span class="nodo"></span><span class="n">${e.nombre}</span><span class="km">${(e.km - linea.estaciones[0].km).toFixed(1)}</span></li>`;
+    const ce = estEst[e.id], cerr = ce.estado === 'cerrada', duda = cerr && ce.nivel === 'sin_confirmar';
+    h += `<li class="est${ext ? ' extremo' : ''}${cerr ? ' cerrada' : ''}${duda ? ' duda' : ''}"><span class="nodo"></span><span class="n">${e.nombre}</span><span class="km">${(e.km - linea.estaciones[0].km).toFixed(1)}</span>`
+      + (cerr ? `<span class="cierre"><span><b>${duda ? '¿Cerrada?' : 'Cerrada'}</b> · ${plural(ce.personas, 'persona', 'personas')} · ${haceCuanto(ce.ultimo)}</span>
+          <button type="button" data-voto-est="${e.id}" data-voto="cerrada">Sigue cerrada</button><button type="button" data-voto-est="${e.id}" data-voto="abierta">Ya abrió</button></span>` : '')
+      + `</li>`;
     const t = linea.tramos[i]; if (!t) return;
     const s = estados[t.id];
     let info = '';
@@ -516,13 +644,16 @@ function pintar(){
   $('nota-reloj').textContent = desfase
     ? `Reloj adelantado ${Math.round(desfase / 60000)} min: los reportes pierden peso con el tiempo y caducan a los ${REGLAS.vigenciaMin} min.`
     : 'Reportes simulados para ver cómo se comporta el mapa, mezclados con los reales.';
-  ultimo = {estados, c, cifra, res};
+  ultimo = {estados, c, cifra, res, cierres: cierres.filter(e => estEst[e.id].nivel === 'confirmado')};
   pintarResumen();
-  pintarMapa(porLinea);
+  pintarMapa(porLinea, porLineaEst);
 }
 $('leyenda').innerHTML = Object.values(ESTADOS).map(e => `<span><i style="--c:${e.color}"></i>${e.nombre}</span>`).join('')
-  + `<span><i class="dud"></i>Sin confirmar</span><span><i style="--c:${SIN_DATOS}"></i>Sin reportes</span>`;
-$('diagrama').addEventListener('click', e => { const b = e.target.closest('[data-tramo]'); if (b) elegirTramo(b.dataset.tramo); });
+  + `<span><i class="dud"></i>Sin confirmar</span><span><i style="--c:${SIN_DATOS}"></i>Sin reportes</span><span><i class="cerr"></i>Estación cerrada</span>`;
+$('diagrama').addEventListener('click', e => {
+  const v = e.target.closest('[data-voto-est]'); if (v) { votarEstacion(v.dataset.votoEst, v.dataset.voto); return; }
+  const b = e.target.closest('[data-tramo]'); if (b) elegirTramo(b.dataset.tramo);
+});
 $('franja').addEventListener('click', e => { const b = e.target.closest('[data-linea]'); if (b) elegirLinea(b.dataset.linea); });
 function elegirLinea(id){ if (linea.id === id) return; linea = LINEA[id]; seleccion = null; marcarUrl(); pintar(); encuadrar(); }
 /** La URL y el título siguen a la línea elegida (enlaces para compartir: /linea-1, /linea-2). */
@@ -548,6 +679,10 @@ function pintarResumen(){
     s = (g.motivo ? `${MOTIVOS[g.motivo].nombre} · ` : '')
       + (g.nivel === 'oficial' && !g.personas ? `Aviso oficial de ${linea.nombre}` : `${g.personas === 1 ? 'persona lo reporta' : 'personas lo reportan'} · ${haceCuanto(g.ultimo)}`);
     alerta = g.estado === 'detenido';
+  } else if (ultimo.cierres.length) {
+    c = ESTADOS_ESTACION.cerrada.color; num = ultimo.cierres.length;
+    b = `${linea.id} · ${ultimo.cierres.length > 1 ? 'Estaciones cerradas' : 'Estación cerrada'} · ${ultimo.cierres.map(e => e.nombre).join(', ')}`;
+    s = 'El tren pasa, pero no para ahí · según los usuarios';
   } else if (res.tipo === 'normal') { b = `${linea.id} · Funcionando con normalidad`; s = `personas en los últimos ${REGLAS.vigenciaMin} min`; }
   else { b = `${linea.id} · Sin reportes recientes`; s = '¿Estás en el tren? Cuéntanos cómo va'; }
   resumenEl.innerHTML = `<span class="punto" ${alerta ? 'data-alerta' : ''} style="--c:${c}"></span>
@@ -630,7 +765,7 @@ if (GL) {
     map.resize(); map.fitBounds([[caja[0], caja[1]], [caja[2], caja[3]]], {padding:margen(), duration:0});
     map.addSource('tramos', {type:'geojson', data:{type:'FeatureCollection', features:[]}});
     map.addSource('estaciones', {type:'geojson', data:{type:'FeatureCollection', features:red.lineas.flatMap(l => l.estaciones.map((e, i) =>
-      ({type:'Feature', properties:{nombre:e.nombre, linea:l.id, lado:(l.id === 'L2' ? i + 1 : i) % 2 ? 'right' : 'left', extremo:i === 0 || i === l.estaciones.length - 1},
+      ({type:'Feature', properties:{id:e.id, nombre:e.nombre, linea:l.id, lado:(l.id === 'L2' ? i + 1 : i) % 2 ? 'right' : 'left', extremo:i === 0 || i === l.estaciones.length - 1, cierre:''},
         geometry:{type:'Point', coordinates:[e.lon, e.lat]}})))}});
     // obras: la vía en construcción, solo de contexto (no se puede reportar)
     map.addSource('obras', {type:'geojson', data:{type:'FeatureCollection', features:(red.obras || []).map(o =>
@@ -656,15 +791,21 @@ if (GL) {
       paint:{'line-color':color, 'line-width':z(3, 6.5), 'line-dasharray':[1.4, 1.2]}});
     map.addLayer({id:'via-sel', type:'line', source:'tramos', filter:['==', ['get','id'], ''], layout:{'line-cap':'round'},
       paint:{'line-color':'#ffffff', 'line-width':z(14, 24), 'line-opacity':.14}});
+    const ROJO = ESTADOS_ESTACION.cerrada.color, cerr = ['==', ['get','cierre'], 'si'], dudaE = ['==', ['get','cierre'], 'duda'];
+    // estación cerrada: halo rojo (latiendo, igual que la vía detenida) bajo el punto
+    map.addLayer({id:'est-cerrada', type:'circle', source:'estaciones', filter:cerr,
+      paint:{'circle-radius':z(10, 20), 'circle-color':ROJO, 'circle-blur':.7, 'circle-opacity':.55}});
     map.addLayer({id:'est-punto', type:'circle', source:'estaciones',
-      paint:{'circle-radius':z(['case', ['get','extremo'], 4.5, 2.6], ['case', ['get','extremo'], 8, 5.5]),
-        'circle-color':['case', ['get','extremo'], '#0A0A0B', '#F2F2F2'], 'circle-stroke-color':['case', ['get','extremo'], '#F2F2F2', '#0A0A0B'],
-        'circle-stroke-width':z(1.5, 2.5)}});
+      // («zoom» solo puede ir arriba del todo: el interpolate envuelve a los case, no al revés)
+      paint:{'circle-radius':z(['case', ['any', cerr, dudaE], 5, ['get','extremo'], 4.5, 2.6], ['case', ['any', cerr, dudaE], 9, ['get','extremo'], 8, 5.5]),
+        'circle-color':['case', cerr, ROJO, dudaE, '#0A0A0B', ['get','extremo'], '#0A0A0B', '#F2F2F2'],
+        'circle-stroke-color':['case', ['any', cerr, dudaE], ROJO, ['get','extremo'], '#F2F2F2', '#0A0A0B'],
+        'circle-stroke-width':z(['case', dudaE, 2, 1.5], ['case', dudaE, 3, 2.5])}});
     map.addLayer({id:'est-nombre', type:'symbol', source:'estaciones',
-      layout:{'text-field':['get','nombre'], 'text-font':fuente, 'text-size':z(10.5, 13.5), 'text-letter-spacing':.02,
+      layout:{'text-field':['case', cerr, ['concat', ['get','nombre'], ' · cerrada'], dudaE, ['concat', ['get','nombre'], ' · ¿cerrada?'], ['get','nombre']], 'text-font':fuente, 'text-size':z(10.5, 13.5), 'text-letter-spacing':.02,
         'text-anchor':['get','lado'], 'text-offset':['case', ['==', ['get','lado'], 'left'], ['literal', [0.9, 0]], ['literal', [-0.9, 0]]],
         'text-padding':2, 'text-optional':true},
-      paint:{'text-color':'#C9C9CE', 'text-halo-color':'rgba(10,10,11,.95)', 'text-halo-width':1.6}});
+      paint:{'text-color':['case', ['any', cerr, dudaE], ROJO, '#C9C9CE'], 'text-halo-color':'rgba(10,10,11,.95)', 'text-halo-width':1.6}});
     for (const l of ['via', 'via-dudosa', 'via-halo']) {
       map.on('click', l, e => elegirTramo(e.features[0].properties.id));
       map.on('mouseenter', l, () => map.getCanvas().style.cursor = 'pointer');
@@ -674,12 +815,20 @@ if (GL) {
     // el brillo rojo de los tramos detenidos late suavemente
     if (!matchMedia('(prefers-reduced-motion:reduce)').matches) {
       const t0 = performance.now();
-      setInterval(() => { if (map.getLayer('via-alerta')) map.setPaintProperty('via-alerta', 'line-opacity', .25 + .3 * (0.5 + 0.5 * Math.sin((performance.now() - t0) / 260))); }, 80);
+      setInterval(() => { const f = 0.5 + 0.5 * Math.sin((performance.now() - t0) / 260);
+        if (map.getLayer('via-alerta')) map.setPaintProperty('via-alerta', 'line-opacity', .25 + .3 * f);
+        if (map.getLayer('est-cerrada')) map.setPaintProperty('est-cerrada', 'circle-opacity', .3 + .4 * f); }, 80);
     }
   });
 }
-function pintarMapa(porLinea){
+function pintarMapa(porLinea, porLineaEst){
   const src = map && map.getSource && map.getSource('tramos'); if (!src) return;
+  map.getSource('estaciones').setData({type:'FeatureCollection', features:red.lineas.flatMap(l => l.estaciones.map((e, i) => {
+    const x = porLineaEst[l.id][e.id];
+    return {type:'Feature', properties:{id:e.id, nombre:e.nombre, linea:l.id, lado:(l.id === 'L2' ? i + 1 : i) % 2 ? 'right' : 'left',
+      extremo:i === 0 || i === l.estaciones.length - 1, cierre:x.estado === 'cerrada' ? (x.nivel === 'confirmado' ? 'si' : 'duda') : ''},
+      geometry:{type:'Point', coordinates:[e.lon, e.lat]}};
+  }))});
   src.setData({type:'FeatureCollection', features:red.lineas.flatMap(l => l.tramos.map(t => ({type:'Feature',
     properties:{id:t.id, estado:porLinea[l.id][t.id].estado || 'sin', nivel:porLinea[l.id][t.id].nivel}, geometry:{type:'LineString', coordinates:t.coords}})))});
   map.setFilter('via-sel', ['==', ['get','id'], seleccion || '']);
@@ -696,17 +845,40 @@ let elegido = null, ubicado = false;
 sel.innerHTML = '<option value="">Elige el tramo…</option>' + red.lineas.map(l => `<optgroup label="${l.nombre} · ${rutaTxt(l)}">${
   l.tramos.map(t => `<option value="${t.id}">${tramoTxt(t.id)}</option>`).join('')}</optgroup>`).join('');
 const DESC = {normal:'Avanza sin problemas', lento:'Demoras, avanza a ratos', detenido:'Parado más de 5 min', sin_servicio:'No pasan trenes'};
-$('opciones').innerHTML = Object.entries(ESTADOS).map(([k, e]) => `<button type="button" class="opcion" data-op="${k}" style="--c:${e.color}" aria-pressed="false"><b>${e.nombre}</b><span>${DESC[k]}</span></button>`).join('');
+$('opciones').innerHTML = Object.entries(ESTADOS).map(([k, e]) => `<button type="button" class="opcion" data-op="${k}" style="--c:${e.color}" aria-pressed="false"><b>${e.nombre}</b><span>${DESC[k]}</span></button>`).join('')
+  + `<button type="button" class="opcion" data-op="cerrada" style="--c:${ESTADOS_ESTACION.cerrada.color}" aria-pressed="false"><b>Estación cerrada</b><span>El tren pasa, pero no para en la estación</span></button>`;
+/* estación cerrada: se reporta la estación, no el tramo */
+const selEst = $('sel-estacion'), estOps = $('est-ops');
+let estacionElegida = null, estacionUbic = null;   // la que dijo la ubicación o el sticker
+selEst.innerHTML = '<option value="">o elige otra estación…</option>' + red.lineas.map(l => `<optgroup label="${l.nombre}">${
+  l.estaciones.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('')}</optgroup>`).join('');
+function marcarEstacion(id){
+  estacionElegida = id || null; selEst.value = id || '';
+  estOps.querySelectorAll('[data-e]').forEach(b => b.setAttribute('aria-pressed', b.dataset.e === id)); listo();
+}
+/** Atajos: la estación donde estás o las dos puntas del tramo elegido. */
+function ofrecerEstaciones(){
+  const ids = [...new Set([estacionUbic, ...(sel.value ? [TRAMO[sel.value].desde, TRAMO[sel.value].hasta] : [])].filter(Boolean))];
+  estOps.innerHTML = ids.map(id => `<button type="button" data-e="${id}" aria-pressed="false"><span>${EST[id].nombre}</span><small>${id === estacionUbic ? 'Aquí' : LINEA[TRAMO[sel.value]?.linea]?.id || ''}</small></button>`).join('');
+  marcarEstacion(estacionElegida && ids.includes(estacionElegida) ? estacionElegida : estacionUbic || (ids.length === 1 ? ids[0] : estacionElegida));
+}
+estOps.addEventListener('click', e => { const b = e.target.closest('[data-e]'); if (b) marcarEstacion(b.dataset.e); });
+selEst.addEventListener('change', () => marcarEstacion(selEst.value));
 // segundo paso, opcional: ¿por qué? (no se pregunta si va normal)
 let motivo = null;
 $('motivo-ops').innerHTML = [...Object.entries(MOTIVOS), ['', {nombre:'No sé'}]]
   .map(([k, m]) => `<button type="button" data-mot="${k}" aria-pressed="${!k}">${m.nombre}</button>`).join('');
 const marcarMotivo = m => { motivo = m || null; document.querySelectorAll('[data-mot]').forEach(x => x.setAttribute('aria-pressed', x.dataset.mot === (m || ''))); };
 $('motivo-ops').addEventListener('click', e => { const b = e.target.closest('[data-mot]'); if (b) marcarMotivo(b.dataset.mot); });
-const listo = () => { $('enviar').disabled = !(sel.value && elegido); };
+const listo = () => {
+  const cierre = elegido === 'cerrada';
+  sel.required = !cierre;   // para una estación cerrada no hace falta el tramo
+  $('enviar').disabled = !(cierre ? estacionElegida : sel.value && elegido);
+};
 $('opciones').addEventListener('click', e => { const b = e.target.closest('[data-op]'); if (!b) return;
   elegido = b.dataset.op; document.querySelectorAll('[data-op]').forEach(x => x.setAttribute('aria-pressed', x === b));
-  $('motivos').hidden = elegido === 'normal'; if (elegido === 'normal') marcarMotivo(null);
+  $('motivos').hidden = elegido === 'normal' || elegido === 'cerrada'; if (elegido === 'normal' || elegido === 'cerrada') marcarMotivo(null);
+  $('est-cierre').hidden = elegido !== 'cerrada'; if (elegido === 'cerrada') ofrecerEstaciones();
   listo(); });
 /* ¿dónde estás? — con la ubicación se elige el tramo solo, usando la estación más cercana */
 const resEl = $('ubic-res'), opsEl = $('ubic-ops'), btnUbic = $('ubicarme');
@@ -719,6 +891,7 @@ function mostrarUbic(tipo, titulo, detalle){
 function marcarTramo(id){
   sel.value = id || '';
   opsEl.querySelectorAll('[data-t]').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === id));
+  if (elegido === 'cerrada') ofrecerEstaciones();
   listo();
 }
 function ofrecer(tramos, elegidoId){
@@ -728,7 +901,8 @@ function ofrecer(tramos, elegidoId){
 }
 function limpiarUbic(){ resEl.hidden = true; opsEl.innerHTML = ''; btnUbic.hidden = false; btnUbic.textContent = 'Usar mi ubicación'; btnUbic.classList.remove('re'); }
 opsEl.addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) marcarTramo(b.dataset.t); });
-sel.addEventListener('change', () => { ubicado = false; opsEl.querySelectorAll('[data-t]').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === sel.value)); listo(); });
+sel.addEventListener('change', () => { ubicado = false; opsEl.querySelectorAll('[data-t]').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === sel.value));
+  if (elegido === 'cerrada') ofrecerEstaciones(); listo(); });
 function ubicarme(){
   if (!navigator.geolocation) { mostrarUbic('lejos', 'Tu navegador no permite usar la ubicación', 'Elige el tramo a mano.'); return; }
   btnUbic.hidden = true; opsEl.innerHTML = '';
@@ -747,6 +921,7 @@ function ubicarme(){
       // con precisión regular no damos por hecho que estás sobre la vía: solo sugerimos
       const tipo = prec > PRECISION.buena && (u.tipo === 'estacion' || u.tipo === 'via') ? 'cerca' : u.tipo;
       ubicado = tipo === 'estacion' || tipo === 'via';
+      estacionUbic = (tipo === 'estacion' || tipo === 'cerca') && u.estacion ? u.estacion.id : null;
       if (tipo === 'estacion') {
         mostrarUbic('estacion', `Estás en ${u.estacion.nombre}`, `${lin} · ${u.metrosEstacion < 40 ? 'en la estación' : `a ${metros(u.metrosEstacion)}`}` + (u.opciones.length > 1 ? ' · ¿en qué tramo?' : ''));
         ofrecer(u.opciones, u.tramo.id);
@@ -764,6 +939,7 @@ function ubicarme(){
       }
     }
     btnUbic.hidden = false; btnUbic.textContent = 'Volver a ubicarme'; btnUbic.classList.add('re');
+    if (elegido === 'cerrada') ofrecerEstaciones();
   }, () => {
     mostrarUbic('lejos', 'No pudimos obtener tu ubicación', 'Revisa el permiso de ubicación o elige el tramo a mano.');
     btnUbic.hidden = false;
@@ -773,6 +949,7 @@ function ubicarme(){
 async function abrirReporte(estacion = null){
   elegido = null; ubicado = false; msg.textContent = ''; limpiarUbic(); marcarTramo(seleccion || '');
   marcarMotivo(null); $('motivos').hidden = true;
+  estacionUbic = estacion ? estacion.id : null; estacionElegida = null; $('est-cierre').hidden = true;
   document.querySelectorAll('[data-op]').forEach(x => x.setAttribute('aria-pressed', false)); listo(); dlg.showModal();
   if (estacion) {
     const l = red.lineas.find(x => x.estaciones.includes(estacion));
@@ -789,10 +966,15 @@ document.querySelectorAll('[data-reportar]').forEach(b => b.addEventListener('cl
 $('cancelar').addEventListener('click', () => dlg.close());
 btnUbic.addEventListener('click', ubicarme);
 $('form').addEventListener('submit', async e => {
-  e.preventDefault(); if (!sel.value || !elegido) return;
-  const rep = {tramo:sel.value, estado:elegido, motivo:elegido === 'normal' ? null : motivo, t:ahora(), autor, ubicado};
+  e.preventDefault();
+  const cierre = elegido === 'cerrada';
+  if (cierre ? !estacionElegida : !sel.value || !elegido) return;
+  // estación cerrada: «ubicado» solo si la ubicación te puso en esa misma estación
+  const rep = cierre ? {estacion:estacionElegida, estado:'cerrada', t:ahora(), autor, ubicado:ubicado && estacionElegida === estacionUbic}
+                     : {tramo:sel.value, estado:elegido, motivo:elegido === 'normal' ? null : motivo, t:ahora(), autor, ubicado};
   const boton = $('enviar'); boton.disabled = true; boton.textContent = 'Enviando…';
-  let aviso = `Gracias. Tu reporte cuenta durante ${REGLAS.vigenciaMin} minutos.`;
+  let aviso = cierre ? `Gracias. Avisamos que ${EST[rep.estacion].nombre} está cerrada durante ${REGLAS.estacionMin} minutos.`
+                    : `Gracias. Tu reporte cuenta durante ${REGLAS.vigenciaMin} minutos.`;
   try {
     const x = await enviar(rep);
     if (!x.ok && x.rechazado) { msg.textContent = x.error || 'No se pudo enviar el reporte.'; return; }
@@ -802,8 +984,20 @@ $('form').addEventListener('submit', async e => {
     pendientes.push(rep); guardar('oat-pendientes', pendientes);
     aviso = 'Sin conexión: guardamos tu reporte y lo enviamos apenas vuelva la señal.';
   } finally { boton.textContent = 'Enviar reporte'; listo(); }
+  if (cierre) { dlg.close(); linea = red.lineas.find(l => l.estaciones.some(x => x.id === rep.estacion)); seleccion = null; marcarUrl(); pintar(); encuadrar(); avisar(aviso); return; }
   dlg.close(); linea = LINEA[TRAMO[sel.value].linea]; seleccion = sel.value; marcarUrl(); pintar(); encuadrar(); avisar(aviso);
 });
+/** Desde la lista de tramos: «Sigue cerrada» / «Ya abrió» (un toque, sin abrir el formulario). */
+async function votarEstacion(id, estado){
+  const rep = {estacion:id, estado, t:ahora(), autor, ubicado:false};
+  let aviso = estado === 'abierta' ? `Gracias. Avisamos que ${EST[id].nombre} ya abrió.` : `Gracias. Confirmaste que ${EST[id].nombre} sigue cerrada.`;
+  try {
+    const x = await enviar(rep);
+    if (!x.ok && x.rechazado) { avisar(x.error || 'No se pudo enviar.'); return; }
+    if (!x.ok) throw new Error('servidor');
+  } catch (_) { pendientes.push(rep); guardar('oat-pendientes', pendientes); aviso = 'Sin conexión: lo enviamos apenas vuelva la señal.'; }
+  pintar(); avisar(aviso);
+}
 function avisar(t){ const el = $('toast'); el.textContent = t; el.classList.add('ver'); clearTimeout(avisar.h); avisar.h = setTimeout(() => el.classList.remove('ver'), 3200); }
 
 /* Enlaces de los stickers.
@@ -816,8 +1010,108 @@ if (estacionSticker) {
   seleccion = linea.tramos.find(t => t.desde === estacionSticker.id || t.hasta === estacionSticker.id).id;
 }
 
+/* Avisos oficiales: los comunicados de Línea 1 (vía /api/avisos, que los lee de lineauno.pe).
+   Cada comunicado es un título y una imagen con el texto completo: la mostramos aquí mismo.
+   El punto ámbar de la campana marca que hay uno de las últimas 24 h que todavía no viste. */
+const dlgAvisos = $('dlg-avisos'), lupa = $('lupa');
+let avisos = null;
+const NUEVO_MS = 24 * 36e5;
+const esNuevo = a => a.id > leer('oat-aviso-visto', 0) && Date.now() - Date.parse(a.fecha) < NUEVO_MS;
+const haceTxt = iso => {
+  const min = Math.round((Date.now() - Date.parse(iso)) / 60000);
+  if (min < 60) return `hace ${Math.max(1, min)} min`;
+  if (min < 24 * 60) return `hace ${Math.round(min / 60)} h`;
+  return new Date(iso).toLocaleDateString('es-PE', {day:'numeric', month:'short', timeZone:'America/Lima'});
+};
+const escH = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+// compartir: el enlace es a Ojo al Tren (/?aviso=<id>), que abre ese comunicado aquí mismo
+const enlaceAviso = a => `${location.origin}/?aviso=${a.id}`;
+const whatsapp = a => 'https://wa.me/?text=' + encodeURIComponent(`📢 ${a.tipo} de Línea 1: ${a.titulo}\n${enlaceAviso(a)}`);
+const ICONO_WA = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.3c0-.1-.2-.2-.5-.3Z"/></svg>';
+// «aquí están los avisos»: el botón vibra un momento (se reinicia si ya estaba vibrando)
+function llamarAvisos(){
+  const b = $('btn-avisos'); if (b.classList.contains('hay')) return;   // ya vibra solo
+  b.classList.remove('llama'); void b.offsetWidth; b.classList.add('llama');
+}
+$('btn-avisos').addEventListener('animationend', e => { if (e.animationName === 'destello') e.currentTarget.classList.remove('llama'); });
+function marcarNuevo(si){ $('avisos-pt').hidden = !si; $('btn-avisos').classList.toggle('hay', si); }
+let avisosT = 0;   // cuándo se consultó por última vez
+async function traerAvisos(){
+  const antes = avisos ? new Set(avisos.map(a => a.id)) : null;
+  try { const r = await fetch('/api/avisos'); avisos = (await r.json()).avisos || []; avisosT = Date.now(); }
+  catch (_) { avisos = avisos || []; }
+  // con la web abierta: si Línea 1 publica algo nuevo, avisamos sin abrir el diálogo de golpe
+  const recien = antes && avisos.find(a => !antes.has(a.id) && esNuevo(a));
+  if (recien) {
+    avisar(`Nuevo comunicado de Línea 1: ${recien.titulo}`);
+    try { navigator.vibrate?.([120, 80, 120]); } catch (_) {}   // Android, si ya tocó la página; iPhone no lo permite
+  }
+  if (recien && dlgAvisos.open) pintarAvisos();   // solo si cambió: no deshacer lo que la persona desplegó
+  marcarNuevo(!!(avisos[0] && esNuevo(avisos[0])));
+  pintarUltimo();
+  return avisos;
+}
+// en el panel: el último comunicado, siempre a mano para volver a verlo
+function pintarUltimo(){
+  const a = avisos && avisos[0];
+  $('sec-avisos').hidden = !a;
+  if (!a) return;
+  $('ult-aviso').dataset.id = a.id;
+  $('ult-aviso').innerHTML = `${a.imagen ? `<img src="${escH(a.imagen)}" alt="" loading="lazy" decoding="async">` : ''}
+    <div><b>${escH(a.titulo)}</b><span>${escH(a.tipo)} · ${haceTxt(a.fecha)} · Ver comunicados →</span></div>`;
+}
+function pintarAvisos(){
+  const lista = $('avisos');
+  if (!avisos) { lista.innerHTML = '<li class="avisos-msg">Cargando comunicados…</li>'; return; }
+  if (!avisos.length) { lista.innerHTML = '<li class="avisos-msg">No pudimos traer los comunicados ahora. Vuelve a intentar en un rato.</li>'; return; }
+  // los 3 más recientes con su imagen; el resto plegado (toca para verlo)
+  lista.innerHTML = avisos.map((a, i) => `<li class="aviso${i > 2 ? ' plegado' : ''}" id="aviso-${a.id}">
+      <div class="meta"><span class="mono">${escH(a.tipo)} · <time datetime="${escH(a.fecha)}">${haceTxt(a.fecha)}</time></span>${esNuevo(a) ? '<span class="mono nuevo">Nuevo</span>' : ''}</div>
+      <h4>${escH(a.titulo)}</h4>
+      ${a.imagen
+        ? `<button type="button" class="img" data-img="${escH(a.imagen)}" aria-label="Ampliar el comunicado"><img src="${escH(a.imagen)}" alt="Comunicado de Línea 1: ${escH(a.titulo)}" loading="lazy" decoding="async"></button>`
+        : ''}
+      <div class="acc">
+        ${a.imagen ? '<button type="button" class="ver">Ver comunicado</button>' : `<a class="ver" href="${escH(a.url)}" target="_blank" rel="noopener">Leer en lineauno.pe ↗</a>`}
+        <a class="wa" href="${escH(whatsapp(a))}" target="_blank" rel="noopener">${ICONO_WA}Enviar por WhatsApp</a>
+      </div>
+    </li>`).join('');
+}
+async function abrirAvisos(id){
+  pintarAvisos(); if (!dlgAvisos.open) dlgAvisos.showModal();
+  if (!avisos) { await traerAvisos(); pintarAvisos(); }
+  const el = id && document.getElementById('aviso-' + id);   // si ya no está entre los últimos 10, queda la lista
+  if (el) { el.classList.remove('plegado'); el.classList.add('foco'); el.scrollIntoView({block:'start'}); }
+  // se marcan como vistos al abrir (el «Nuevo» de la lista se queda hasta la próxima vez)
+  if (avisos.length) { guardar('oat-aviso-visto', Math.max(...avisos.map(a => a.id))); marcarNuevo(false); }
+}
+$('avisos').addEventListener('click', e => {
+  const ver = e.target.closest('button.ver'); if (ver) { ver.closest('.aviso').classList.remove('plegado'); return; }
+  const b = e.target.closest('[data-img]'); if (!b) return;
+  const img = lupa.querySelector('img'); img.src = b.dataset.img; img.alt = b.querySelector('img').alt;
+  lupa.hidden = false; lupa.scrollTop = 0;
+});
+lupa.addEventListener('click', e => { e.stopPropagation(); lupa.hidden = true; });
+dlgAvisos.addEventListener('cancel', e => { if (!lupa.hidden) { e.preventDefault(); lupa.hidden = true; } });   // Esc: primero cierra la imagen
+dlgAvisos.addEventListener('close', () => { lupa.hidden = true; setTimeout(llamarAvisos, 250); });   // al cerrar: «aquí los vuelves a encontrar»
+$('btn-avisos').addEventListener('click', () => abrirAvisos());
+document.querySelectorAll('[data-avisos]').forEach(b => b.addEventListener('click', () => abrirAvisos(b.dataset.id)));
+$('avisos-cerrar').addEventListener('click', () => dlgAvisos.close());
+dlgAvisos.addEventListener('click', e => { if (e.target === dlgAvisos) dlgAvisos.close(); });
+
 pintar();
 if (estacionSticker) abrirReporte(estacionSticker);
+// si Línea 1 publicó algo en las últimas 24 h que no viste, se abre solo (no si vienes de un sticker a reportar)
+const AVISO_URL = Number(new URLSearchParams(location.search).get('aviso')) || 0;   // /?aviso=15462 (enviado por WhatsApp)
+traerAvisos().then(() => {
+  if (AVISO_URL && !estacionSticker) abrirAvisos(AVISO_URL);
+  else if (!estacionSticker && !$('avisos-pt').hidden && !dlg.open) abrirAvisos();
+  else if (avisos.length) setTimeout(llamarAvisos, 1200);   // al entrar, si no se abrió nada: un aviso de que el botón existe
+});
+// se revisan cada 10 min con la pestaña a la vista (el servidor los guarda 10 min: más seguido no trae nada nuevo)
+const AVISOS_CADA = 10 * 60_000;
+setInterval(() => { if (!document.hidden) traerAvisos(); }, AVISOS_CADA);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - avisosT > 5 * 60_000) traerAvisos(); });
 cargar();
 // cada 30 s: traer los reportes nuevos de todos (y recalcular, porque los reportes envejecen)
 setInterval(() => document.hidden ? pintar() : cargar(), 30_000);

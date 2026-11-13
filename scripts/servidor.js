@@ -1,4 +1,4 @@
-// Servidor local: la web de dist/ y la API (/api/reportes), como en Vercel.  Uso: npm run dev
+// Servidor local: la web de dist/ y la API (/api/reportes, /api/avisos), como en Vercel.  Uso: npm run dev
 // Sin DATABASE_URL en .env los reportes viven en memoria (se pierden al cerrar).
 import fs from 'node:fs';
 import http from 'node:http';
@@ -10,6 +10,7 @@ for (const l of (fs.existsSync(path.join(RAIZ, '.env')) ? fs.readFileSync(path.j
   if (m && !l.trim().startsWith('#') && process.env[m[1]] === undefined) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
 }
 const { default: reportes } = await import('../api/reportes.js');
+const { default: avisos } = await import('../api/avisos.js');
 const DIST = path.join(RAIZ, 'dist'), PUERTO = Number(process.env.PORT || 3001);
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.css': 'text/css',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json', '.txt': 'text/plain', '.xml': 'application/xml' };
@@ -17,6 +18,7 @@ const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 http.createServer(async (req, res) => {
   let ruta = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (ruta === '/api/reportes') return reportes(req, res);
+  if (ruta === '/api/avisos') return avisos(req, res);
   if (ruta === '/qr' || /^\/e\/[a-z0-9-]+\/?$/.test(ruta)) ruta = '/';          // igual que vercel.json
   const candidatos = [ruta, ruta + '.html', path.posix.join(ruta, 'index.html')];   // cleanUrls
   for (const c of candidatos) {

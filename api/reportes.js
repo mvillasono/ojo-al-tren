@@ -3,6 +3,8 @@
  *   GET  → { ahora, reportes:[{id, tramo, estado, motivo, ubicado, autor, t}] } de los últimos 20 min
  *   POST { tramo, estado, motivo?, ubicado, autor } → { reporte }
  *        motivo (opcional): 'afluencia' | 'puertas' | 'estacion' | 'falla'; no se acepta con estado 'normal'.
+ *   POST { estacion, estado:'cerrada'|'abierta', ubicado, autor } → { reporte }   (estación cerrada: el tren no para)
+ *   El GET trae además { estaciones:[{id, estacion, estado, ubicado, autor, t}] } de los últimos 60 min.
  *
  * Privacidad: no se recibe ni se guarda la ubicación (el navegador solo dice si el GPS lo puso
  * sobre la vía). El id del navegador y la IP se guardan como hash; el de la IP cambia cada día
@@ -13,8 +15,8 @@
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
-import { recientes, contar, guardar, limpiar, enMemoria } from './_db.js';
-import { MOTIVOS } from '../lib/estado.js';
+import { recientes, contar, guardar, limpiar, enMemoria, recientesEstacion, guardarEstacion } from './_db.js';
+import { MOTIVOS, REGLAS, ESTADOS_ESTACION } from '../lib/estado.js';
 
 const VIGENCIA_MIN = 20;     // igual que REGLAS.vigenciaMin en lib/estado.js
 const GUARDAR_DIAS = 7;
@@ -26,6 +28,13 @@ const LIMITES = [
 const ESTADOS = new Set(['normal', 'lento', 'detenido', 'sin_servicio']);   // sin_servicio solo lo usan los avisos oficiales en la web, pero se acepta
 const red = JSON.parse(fs.readFileSync(new URL('../data/lineas.json', import.meta.url), 'utf8'));
 const TRAMOS = new Set(red.lineas.flatMap(l => l.tramos.map(t => t.id)));
+const ESTACIONES = new Set(red.lineas.flatMap(l => l.estaciones.map(e => e.id)));
+// estaciones: una estación cerrada no cambia cada minuto, así que se piden menos reportes
+const LIMITES_ESTACION = [
+  { min: 5,  max: 1,  por: ['autor', 'estacion'], msg: 'Ya reportaste esta estación hace un momento.' },
+  { min: 60, max: 10, por: ['autor'],             msg: 'Llegaste al límite de reportes de estaciones por hora. Gracias por ayudar.' },
+  { min: 60, max: 40, por: ['red_hash'],          msg: 'Demasiados reportes desde esta red. Intenta en un rato.' },
+];
 
 // sal para los hash: AUTOR_SAL en Vercel. Sin ella, una al azar por instancia (los límites siguen, pero menos parejos).
 const SAL = process.env.AUTOR_SAL || crypto.randomBytes(16).toString('hex');
@@ -46,12 +55,27 @@ function responder(res, status, datos, cache = 'no-store') {
   res.end(JSON.stringify(datos));
 }
 
+/** Estación cerrada / ya abrió. Mismas reglas de privacidad que los tramos. */
+async function reportarEstacion(req, res, { estacion, estado, ubicado = false, autor }) {
+  if (typeof estacion !== 'string' || !ESTACIONES.has(estacion)) return responder(res, 400, { error: 'Estación desconocida' });
+  if (typeof estado !== 'string' || !Object.hasOwn(ESTADOS_ESTACION, estado)) return responder(res, 400, { error: 'Estado de estación desconocido' });
+  if (typeof ubicado !== 'boolean') return responder(res, 400, { error: 'ubicado debe ser true o false' });
+  if (typeof autor !== 'string' || !/^[A-Za-z0-9_-]{6,40}$/.test(autor)) return responder(res, 400, { error: 'Autor inválido' });
+  const dia = new Date().toISOString().slice(0, 10);
+  const r = { estacion, estado, ubicado, autor: hash(SAL, 'autor', autor), red_hash: hash(SAL, dia, ipDe(req)) };
+  for (const l of LIMITES_ESTACION) {
+    const filtro = Object.fromEntries(l.por.map(k => [k, r[k]]));
+    if (await contar(filtro, l.min, 'reportes_estacion') >= l.max) { res.setHeader('Retry-After', String(l.min * 60)); return responder(res, 429, { error: l.msg }); }
+  }
+  return responder(res, 201, { reporte: await guardarEstacion(r) });
+}
+
 export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
-      const reportes = await recientes(VIGENCIA_MIN);
+      const [reportes, estaciones] = await Promise.all([recientes(VIGENCIA_MIN), recientesEstacion(REGLAS.estacionMin)]);
       // la CDN de Vercel lo comparte unos segundos: miles de visitas = pocas consultas a la base
-      return responder(res, 200, { ahora: Date.now(), reportes }, 'public, max-age=0, s-maxage=10, stale-while-revalidate=20');
+      return responder(res, 200, { ahora: Date.now(), reportes, estaciones }, 'public, max-age=0, s-maxage=10, stale-while-revalidate=20');
     }
     if (req.method !== 'POST') { res.setHeader('Allow', 'GET, POST'); return responder(res, 405, { error: 'Método no permitido' }); }
 
@@ -61,7 +85,8 @@ export default async function handler(req, res) {
 
     let b;
     try { b = await cuerpo(req); } catch { return responder(res, 400, { error: 'Cuerpo inválido' }); }
-    const { tramo, estado, motivo = null, ubicado = false, autor } = b || {};
+    const { tramo, estacion, estado, motivo = null, ubicado = false, autor } = b || {};
+    if (estacion !== undefined) return await reportarEstacion(req, res, { estacion, estado, ubicado, autor });
     if (!TRAMOS.has(tramo)) return responder(res, 400, { error: 'Tramo desconocido' });
     if (!ESTADOS.has(estado)) return responder(res, 400, { error: 'Estado desconocido' });
     if (motivo !== null && !(typeof motivo === 'string' && Object.hasOwn(MOTIVOS, motivo))) return responder(res, 400, { error: 'Motivo desconocido' });

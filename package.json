@@ -26,7 +26,7 @@
     "build": "node scripts/build.js",
     "dev": "node scripts/build.js --local && node scripts/servidor.js",
     "linea": "python scripts/linea.py",
-    "test": "node --test tests/estado.test.js tests/api.test.js",
+    "test": "node --test tests/estado.test.js tests/api.test.js tests/avisos.test.js",
     "db:init": "node scripts/db-init.js"
   },
   "engines": {
