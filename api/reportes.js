@@ -4,7 +4,9 @@
  *   POST { tramo, estado, motivo?, ubicado, autor } → { reporte }
  *        motivo (opcional): 'afluencia' | 'puertas' | 'estacion' | 'falla'; no se acepta con estado 'normal'.
  *   POST { estacion, estado:'cerrada'|'abierta', ubicado, autor } → { reporte }   (estación cerrada: el tren no para)
- *   El GET trae además { estaciones:[{id, estacion, estado, ubicado, autor, t}] } de los últimos 60 min.
+ *   El GET trae además { estaciones:[{id, estacion, estado, ubicado, autor, t}] } de los últimos 60 min
+ *   y { actividad:{ L1:{hoy, ultimo}, … } }: cuántos reportes hubo hoy (hora de Lima) y cuándo fue el último
+ *   (de los últimos días guardados). Son conteos reales: sirven para mostrar que hay gente usando la web.
  *
  * Privacidad: no se recibe ni se guarda la ubicación (el navegador solo dice si el GPS lo puso
  * sobre la vía). El id del navegador y la IP se guardan como hash; el de la IP cambia cada día
@@ -15,7 +17,7 @@
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
-import { recientes, contar, guardar, limpiar, enMemoria, recientesEstacion, guardarEstacion } from './_db.js';
+import { recientes, contar, guardar, limpiar, enMemoria, recientesEstacion, guardarEstacion, actividad } from './_db.js';
 import { MOTIVOS, REGLAS, ESTADOS_ESTACION } from '../lib/estado.js';
 
 const VIGENCIA_MIN = 20;     // igual que REGLAS.vigenciaMin en lib/estado.js
@@ -28,6 +30,17 @@ const LIMITES = [
 const ESTADOS = new Set(['normal', 'lento', 'detenido', 'sin_servicio']);   // sin_servicio solo lo usan los avisos oficiales en la web, pero se acepta
 const red = JSON.parse(fs.readFileSync(new URL('../data/lineas.json', import.meta.url), 'utf8'));
 const TRAMOS = new Set(red.lineas.flatMap(l => l.tramos.map(t => t.id)));
+const LINEA_DE = Object.fromEntries(red.lineas.flatMap(l => l.tramos.map(t => [t.id, l.id])));
+
+/** Suma la actividad por tramo en actividad por línea: { L1:{hoy, ultimo}, L2:{hoy, ultimo} } (ultimo: null si no hay). */
+function porLinea(filas) {
+  const a = Object.fromEntries(red.lineas.map(l => [l.id, { hoy: 0, ultimo: null }]));
+  for (const f of filas) {
+    const x = a[LINEA_DE[f.tramo]]; if (!x) continue;
+    x.hoy += f.hoy; x.ultimo = Math.max(x.ultimo || 0, f.ultimo) || null;
+  }
+  return a;
+}
 const ESTACIONES = new Set(red.lineas.flatMap(l => l.estaciones.map(e => e.id)));
 // estaciones: una estación cerrada no cambia cada minuto, así que se piden menos reportes
 const LIMITES_ESTACION = [
@@ -73,9 +86,11 @@ async function reportarEstacion(req, res, { estacion, estado, ubicado = false, a
 export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
-      const [reportes, estaciones] = await Promise.all([recientes(VIGENCIA_MIN), recientesEstacion(REGLAS.estacionMin)]);
+      const [reportes, estaciones, act] = await Promise.all([recientes(VIGENCIA_MIN), recientesEstacion(REGLAS.estacionMin),
+        // la actividad es un extra: si su consulta falla, los reportes se sirven igual (sin el conteo)
+        actividad().catch(e => { console.error('api/reportes actividad', e); return null; })]);
       // la CDN de Vercel lo comparte unos segundos: miles de visitas = pocas consultas a la base
-      return responder(res, 200, { ahora: Date.now(), reportes, estaciones }, 'public, max-age=0, s-maxage=10, stale-while-revalidate=20');
+      return responder(res, 200, { ahora: Date.now(), reportes, estaciones, actividad: act ? porLinea(act) : null }, 'public, max-age=0, s-maxage=10, stale-while-revalidate=20');
     }
     if (req.method !== 'POST') { res.setHeader('Allow', 'GET, POST'); return responder(res, 405, { error: 'Método no permitido' }); }
 
