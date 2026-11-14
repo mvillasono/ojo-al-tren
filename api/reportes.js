@@ -86,9 +86,11 @@ async function reportarEstacion(req, res, { estacion, estado, ubicado = false, a
 export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
-      const [reportes, estaciones, act] = await Promise.all([recientes(VIGENCIA_MIN), recientesEstacion(REGLAS.estacionMin), actividad()]);
+      const [reportes, estaciones, act] = await Promise.all([recientes(VIGENCIA_MIN), recientesEstacion(REGLAS.estacionMin),
+        // la actividad es un extra: si su consulta falla, los reportes se sirven igual (sin el conteo)
+        actividad().catch(e => { console.error('api/reportes actividad', e); return null; })]);
       // la CDN de Vercel lo comparte unos segundos: miles de visitas = pocas consultas a la base
-      return responder(res, 200, { ahora: Date.now(), reportes, estaciones, actividad: porLinea(act) }, 'public, max-age=0, s-maxage=10, stale-while-revalidate=20');
+      return responder(res, 200, { ahora: Date.now(), reportes, estaciones, actividad: act ? porLinea(act) : null }, 'public, max-age=0, s-maxage=10, stale-while-revalidate=20');
     }
     if (req.method !== 'POST') { res.setHeader('Allow', 'GET, POST'); return responder(res, 405, { error: 'Método no permitido' }); }
 

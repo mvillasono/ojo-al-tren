@@ -562,7 +562,7 @@ function estadoCorto(l, est, estEst = {}){
       voz:`${cerradas.length > 1 ? 'estaciones cerradas' : 'estación cerrada'}: ${nombres}; el tren no para ahí`};
   }
   return r.tipo === 'normal' ? {tipo:r.tipo, c:ESTADOS.normal.color, txt:'Normal', donde:'', voz:'funcionando con normalidad'}
-                             : conectado ? {tipo:r.tipo, c:'var(--apagado)', txt:'Sin incidencias', donde:'', voz:'nadie reportó problemas en los últimos minutos'}
+                             : conectado && actividad ? {tipo:r.tipo, c:'var(--apagado)', txt:'Sin incidencias', donde:'', voz:'nadie reportó problemas en los últimos minutos'}
                              : {tipo:r.tipo, c:'var(--apagado)', txt:'Sin reportes', donde:'', voz:'sin reportes recientes'};
 }
 function pintar(){
@@ -610,9 +610,9 @@ function pintar(){
     c = ESTADOS.normal.color; ceja = 'En vivo · funcionando'; cifra = personasVig;
     dice = `${personasVig === 1 ? 'persona dice' : 'personas dicen'} que la ${linea.nombre} funciona <b>con normalidad</b>`;
     meta = `Últimos ${REGLAS.vigenciaMin} min`;
-  } else if (conectado) {
+  } else if (conectado && actividad) {
     // nadie reportó en 20 min: no se inventa un estado, se cuenta lo que sí pasó hoy (reportes reales y comunicados)
-    const act = actividad?.[linea.id] || {hoy: 0, ultimo: null}, com = comunicadoReciente();
+    const act = actividad[linea.id] || {hoy: 0, ultimo: null}, com = comunicadoReciente();
     c = 'var(--apagado)'; ceja = 'Sin incidencias reportadas'; cifra = act.hoy;
     dice = `${act.hoy === 1 ? 'reporte' : 'reportes'} hoy en la ${linea.nombre}. Nadie reportó problemas en los últimos ${REGLAS.vigenciaMin} min.`
       + (com ? ` Línea 1 publicó un comunicado ${haceTxt(com.fecha)}: revísalo abajo.` : '')
@@ -698,7 +698,7 @@ function pintarResumen(){
     b = `${linea.id} · ${ultimo.cierres.length > 1 ? 'Estaciones cerradas' : 'Estación cerrada'} · ${ultimo.cierres.map(e => e.nombre).join(', ')}`;
     s = 'El tren pasa, pero no para ahí · según los usuarios';
   } else if (res.tipo === 'normal') { b = `${linea.id} · Funcionando con normalidad`; s = `personas en los últimos ${REGLAS.vigenciaMin} min`; }
-  else if (conectado) { b = `${linea.id} · Sin incidencias reportadas`; s = `${ultimo.cifra === 1 ? 'reporte' : 'reportes'} hoy · ¿Estás en el tren? Cuéntanos cómo va`; }
+  else if (conectado && actividad) { b = `${linea.id} · Sin incidencias reportadas`; s = `${ultimo.cifra === 1 ? 'reporte' : 'reportes'} hoy · ¿Estás en el tren? Cuéntanos cómo va`; }
   else { b = `${linea.id} · Sin reportes recientes`; s = '¿Estás en el tren? Cuéntanos cómo va'; }
   resumenEl.innerHTML = `<span class="punto" ${alerta ? 'data-alerta' : ''} style="--c:${c}"></span>
     <span class="num">${fmt(num)}</span><span class="txt"><b>${b}</b><span>${s}</span></span>
