@@ -437,7 +437,11 @@ let desfase = 0, relojServidor = 0;   // relojServidor: diferencia con la hora d
 const ahora = () => Date.now() + relojServidor + desfase;
 function haceCuanto(t){
   const min = Math.round((ahora() - t) / 60000);
-  return min < 1 ? 'hace un momento' : `hace ${min} min`;
+  if (min < 1) return 'hace un momento';
+  if (min < 60) return `hace ${min} min`;
+  if (min < 24 * 60) return `hace ${Math.round(min / 60)} h`;
+  const d = Math.round(min / 1440);
+  return d === 1 ? 'ayer' : `hace ${d} días`;
 }
 const plural = (n, uno, varios) => `${n.toLocaleString('es-PE')} ${n === 1 ? uno : varios}`;
 const entre = (a, b) => `entre ${EST[a].nombre} y ${EST[b].nombre}`;
@@ -457,7 +461,7 @@ if (!autor) { autor = 'yo-' + Math.random().toString(36).slice(2, 10); guardar('
 if (!/^[A-Za-z0-9_-]{6,40}$/.test(autor)) { autor = 'yo-' + Math.random().toString(36).slice(2, 10); guardar('oat-autor', autor); }
 // pendientes: reportes que no llegaron al servidor (sin señal); se reintentan y mientras tanto se ven aquí
 let pendientes = leer('oat-pendientes', []).filter(r => Date.now() - r.t < REGLAS.vigenciaMin * 60000);
-let remotos = [], conectado = null;   // conectado: null = aún no se sabe, true/false según la última consulta
+let remotos = [], conectado = null, actividad = null;   // actividad: {L1:{hoy, ultimo}} reales, de la API   // conectado: null = aún no se sabe, true/false según la última consulta
 let demo = [];
 const todos = () => [...demo, ...remotos, ...pendientes];
 
@@ -467,6 +471,7 @@ async function cargar(){
     if (!r.ok) throw new Error(r.status);
     const d = await r.json();
     relojServidor = Math.abs(d.ahora - Date.now()) > 60_000 ? d.ahora - Date.now() : 0;
+    actividad = d.actividad || null;
     const nuevos = [...d.reportes, ...(d.estaciones || [])];
     const clave = x => (x.estacion ? 'e' : 't') + x.id;   // tramos y estaciones vienen de tablas distintas: los id pueden repetirse
     const vistos = new Set(nuevos.map(clave));
@@ -557,6 +562,7 @@ function estadoCorto(l, est, estEst = {}){
       voz:`${cerradas.length > 1 ? 'estaciones cerradas' : 'estación cerrada'}: ${nombres}; el tren no para ahí`};
   }
   return r.tipo === 'normal' ? {tipo:r.tipo, c:ESTADOS.normal.color, txt:'Normal', donde:'', voz:'funcionando con normalidad'}
+                             : conectado ? {tipo:r.tipo, c:'var(--apagado)', txt:'Sin incidencias', donde:'', voz:'nadie reportó problemas en los últimos minutos'}
                              : {tipo:r.tipo, c:'var(--apagado)', txt:'Sin reportes', donde:'', voz:'sin reportes recientes'};
 }
 function pintar(){
@@ -604,6 +610,14 @@ function pintar(){
     c = ESTADOS.normal.color; ceja = 'En vivo · funcionando'; cifra = personasVig;
     dice = `${personasVig === 1 ? 'persona dice' : 'personas dicen'} que la ${linea.nombre} funciona <b>con normalidad</b>`;
     meta = `Últimos ${REGLAS.vigenciaMin} min`;
+  } else if (conectado) {
+    // nadie reportó en 20 min: no se inventa un estado, se cuenta lo que sí pasó hoy (reportes reales y comunicados)
+    const act = actividad?.[linea.id] || {hoy: 0, ultimo: null}, com = comunicadoReciente();
+    c = 'var(--apagado)'; ceja = 'Sin incidencias reportadas'; cifra = act.hoy;
+    dice = `${act.hoy === 1 ? 'reporte' : 'reportes'} hoy en la ${linea.nombre}. Nadie reportó problemas en los últimos ${REGLAS.vigenciaMin} min.`
+      + (com ? ` Línea 1 publicó un comunicado ${haceTxt(com.fecha)}: revísalo abajo.` : '')
+      + ` <b>¿Estás en el tren?</b> Cuéntanos cómo va.`;
+    meta = act.ultimo ? `Último reporte ${haceCuanto(act.ultimo)}` : '';
   } else {
     c = 'var(--apagado)'; ceja = 'Sin reportes'; cifra = 0;
     dice = `reportes en los últimos ${REGLAS.vigenciaMin} min. <b>¿Estás en el tren?</b> Cuéntanos cómo va.`;
@@ -684,6 +698,7 @@ function pintarResumen(){
     b = `${linea.id} · ${ultimo.cierres.length > 1 ? 'Estaciones cerradas' : 'Estación cerrada'} · ${ultimo.cierres.map(e => e.nombre).join(', ')}`;
     s = 'El tren pasa, pero no para ahí · según los usuarios';
   } else if (res.tipo === 'normal') { b = `${linea.id} · Funcionando con normalidad`; s = `personas en los últimos ${REGLAS.vigenciaMin} min`; }
+  else if (conectado) { b = `${linea.id} · Sin incidencias reportadas`; s = `${ultimo.cifra === 1 ? 'reporte' : 'reportes'} hoy · ¿Estás en el tren? Cuéntanos cómo va`; }
   else { b = `${linea.id} · Sin reportes recientes`; s = '¿Estás en el tren? Cuéntanos cómo va'; }
   resumenEl.innerHTML = `<span class="punto" ${alerta ? 'data-alerta' : ''} style="--c:${c}"></span>
     <span class="num">${fmt(num)}</span><span class="txt"><b>${b}</b><span>${s}</span></span>
@@ -1016,6 +1031,8 @@ if (estacionSticker) {
 const dlgAvisos = $('dlg-avisos'), lupa = $('lupa');
 let avisos = null;
 const NUEVO_MS = 24 * 36e5;
+// un comunicado de Línea 1 de las últimas 3 h: se menciona en el titular cuando nadie reporta (puede ser una incidencia)
+const comunicadoReciente = () => linea.id === 'L1' && avisos?.[0] && Date.now() - Date.parse(avisos[0].fecha) < 3 * 36e5 ? avisos[0] : null;
 const esNuevo = a => a.id > leer('oat-aviso-visto', 0) && Date.now() - Date.parse(a.fecha) < NUEVO_MS;
 const haceTxt = iso => {
   const min = Math.round((Date.now() - Date.parse(iso)) / 60000);
@@ -1049,6 +1066,7 @@ async function traerAvisos(){
   if (recien && dlgAvisos.open) pintarAvisos();   // solo si cambió: no deshacer lo que la persona desplegó
   marcarNuevo(!!(avisos[0] && esNuevo(avisos[0])));
   pintarUltimo();
+  pintar();   // el titular menciona el comunicado reciente cuando nadie reporta
   return avisos;
 }
 // en el panel: el último comunicado, siempre a mano para volver a verlo

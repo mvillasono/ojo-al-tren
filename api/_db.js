@@ -56,6 +56,31 @@ export async function guardar(r) {
   return fila(rows[0]);
 }
 
+/** Medianoche de hoy en Lima (UTC−5 todo el año: Perú no cambia la hora), en ms. */
+export function inicioDiaLima(ahora = Date.now()) {
+  const H5 = 5 * 3_600_000, DIA = 86_400_000;
+  return Math.floor((ahora - H5) / DIA) * DIA + H5;
+}
+
+/** Actividad por tramo: [{tramo, hoy, ultimo}] con los reportes de hoy (hora de Lima) y el último de los días guardados. */
+export async function actividad() {
+  const desde = inicioDiaLima();
+  if (!pool) {
+    const m = new Map();
+    for (const r of memoria) {
+      const x = m.get(r.tramo) || { tramo: r.tramo, hoy: 0, ultimo: 0 };
+      if (r.creado >= desde) x.hoy++;
+      x.ultimo = Math.max(x.ultimo, r.creado); m.set(r.tramo, x);
+    }
+    return [...m.values()];
+  }
+  await preparar();
+  const { rows } = await pool.query(
+    `SELECT tramo, count(*) FILTER (WHERE creado >= to_timestamp($1 / 1000.0))::int AS hoy, max(creado) AS ultimo
+     FROM reportes GROUP BY tramo`, [desde]);
+  return rows.map(r => ({ tramo: r.tramo, hoy: r.hoy, ultimo: new Date(r.ultimo).getTime() }));
+}
+
 /* ---------- estaciones cerradas ---------- */
 const filaEst = r => ({ id: Number(r.id), estacion: r.estacion, estado: r.estado, ubicado: r.ubicado, autor: r.autor, t: new Date(r.creado).getTime() });
 

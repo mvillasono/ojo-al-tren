@@ -90,3 +90,18 @@ test('estación: valida y frena la repetición', async () => {
   assert.equal((await llamar('POST', est({ estado: 'toString', autor: 'otro-est-123' }))).status, 400);
   assert.equal((await llamar('POST', est({ autor: '<x>' }))).status, 400);
 });
+
+test('el GET cuenta los reportes de hoy por línea (actividad real, para mostrar cuando nadie reporta)', async () => {
+  const g = await llamar('GET');
+  const { L1, L2 } = g.d.actividad;
+  assert.ok(L1.hoy > 0, 'los reportes de las pruebas anteriores cuentan como de hoy');
+  assert.ok(Date.now() - L1.ultimo < 60_000);
+  assert.deepEqual(L2, { hoy: 0, ultimo: null });
+  assert.ok(!('autor' in L1), 'solo conteos, nada de quién reportó');
+});
+
+test('el día empieza a medianoche de Lima (UTC−5)', async () => {
+  const { inicioDiaLima } = await import('../api/_db.js');
+  assert.equal(inicioDiaLima(Date.parse('2026-11-13T04:59:00Z')), Date.parse('2026-11-12T05:00:00Z'));   // 23:59 en Lima
+  assert.equal(inicioDiaLima(Date.parse('2026-11-13T05:00:00Z')), Date.parse('2026-11-13T05:00:00Z'));   // 00:00 en Lima
+});
