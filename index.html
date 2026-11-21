@@ -899,7 +899,8 @@ const lineasTren = red.lineas.map(l => {
 function repartir(lt){
   const n = servicioAhora(lt.l.id).n, ciclo = 2 * lt.largo;
   lt.trenes = Array.from({length:n}, (_, k) => { const s = (k + .5) * ciclo / n;
-    return s < lt.largo ? {d:s, dir:1, v:lt.vmax * .7, espera:0} : {d:ciclo - s, dir:-1, v:lt.vmax * .7, espera:0}; });
+    const modelo = modeloNuevo(lt);
+    return s < lt.largo ? {d:s, dir:1, v:lt.vmax * .7, espera:0, modelo} : {d:ciclo - s, dir:-1, v:lt.vmax * .7, espera:0, modelo}; });
 }
 function ajustarFlota(lt){
   const n = servicioAhora(lt.l.id).n, activos = lt.trenes.filter(t => !t.retirar);
@@ -908,7 +909,7 @@ function ajustarFlota(lt){
       .slice(0, activos.length - n).forEach(t => t.retirar = true);
   else if (activos.length < n)   // faltan: sale uno por la punta que esté libre
     for (const [d, dir] of [[0, 1], [lt.largo, -1]])
-      if (!lt.trenes.some(t => t.dir === dir && Math.abs(t.d - d) < TREN.distancia)) { lt.trenes.push({d, dir, v:0, espera:lt.S.parada}); break; }
+      if (!lt.trenes.some(t => t.dir === dir && Math.abs(t.d - d) < TREN.distancia)) { lt.trenes.push({d, dir, v:0, espera:lt.S.parada, modelo:modeloNuevo(lt)}); break; }
 }
 const estadoDe = (l, t) => { const e = trenEstado?.porLinea[l.id][t.id]; return e && e.nivel !== 'sin_confirmar' ? e.estado : null; };
 const bloqueado = s => s === 'detenido' || s === 'sin_servicio';
@@ -976,7 +977,7 @@ function posTren(lt, tr){
   return {punto:[a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], rumbo, estado:estadoDe(lt.l, lt.l.tramos[i]) || 'normal'};
 }
 const trenesGeo = () => ({type:'FeatureCollection', features:lineasTren.flatMap(lt => lt.trenes.map(tr => { const p = posTren(lt, tr);
-  return {type:'Feature', properties:{linea:lt.l.id, estado:p.estado, rumbo:p.rumbo}, geometry:{type:'Point', coordinates:p.punto}}; }))});
+  return {type:'Feature', properties:{linea:lt.l.id, estado:p.estado, rumbo:p.rumbo, modelo:tr.modelo}, geometry:{type:'Point', coordinates:p.punto}}; }))});
 /** Un punto del trazo a d metros del inicio. */
 function puntoEn(lt, d){
   let k = lt.cum.findIndex(c => c >= d); k = Math.max(1, k < 0 ? lt.cum.length - 1 : k);
@@ -995,21 +996,49 @@ function estelasGeo(){
     return {type:'Feature', properties:{}, geometry:{type:'LineString', coordinates:[puntoEn(lt, d0), ...medio, puntoEn(lt, tr.d)]}};
   }))};
 }
-/** El dibujo: un vagón rectangular visto desde arriba, con ventanas. Siempre blanco: el color del problema ya lo da la vía. */
-function dibujarTren(color){
-  const r = 2, W = 34, H = 12, cv = document.createElement('canvas'); cv.width = W * r; cv.height = H * r;
-  const g = cv.getContext('2d'); g.scale(r, r);
-  if (!g.roundRect) g.roundRect = function(x, y, w, h){ this.rect(x, y, w, h); };   // iOS 15: esquinas rectas
-  g.fillStyle = '#0A0A0B'; g.beginPath(); g.roundRect(0, 0, W, H, 5); g.fill();            // borde oscuro: se lee sobre la vía blanca
-  g.fillStyle = color; g.beginPath(); g.roundRect(1.5, 1.5, W - 3, H - 3, 4); g.fill();
-  g.fillStyle = 'rgba(10,10,11,.75)';
-  for (let x = 7; x < W - 8; x += 5) g.fillRect(x, 4, 3, H - 8);                          // ventanas
-  g.fillRect(3, 3.5, 2, H - 7); g.fillRect(W - 5, 3.5, 2, H - 7);                          // cabinas
+/* Los dibujos: un modelo por silueta, vistos desde arriba y mirando a la derecha (a 2× para pantallas nítidas).
+   Siempre en blancos y grises: el color del problema ya lo da la vía.
+   alstom  · L1, 39 de 44 trenes: largo, con los 6 coches marcados y las puntas redondeadas
+   segunda · L1, los otros 5: puntas cuadradas y franja de ventanas continua
+   hitachi · L2, automático: sin cabina, en cápsula, con el frente panorámico oscuro y un gris claro */
+const OSCURO = '#0A0A0B', VENTANAS = 'rgba(10,10,11,.75)';
+const MODELOS_TREN = {
+  alstom:{w:42, h:11, dibujar(g, W, H){
+    g.fillStyle = OSCURO; rr(g, 0, 0, W, H, 5); g.fill();                                   // borde oscuro: se lee sobre la vía blanca
+    g.fillStyle = '#F2F2F2'; rr(g, 1.5, 1.5, W - 3, H - 3, 4); g.fill();
+    const c = (W - 3) / 6;
+    g.fillStyle = OSCURO; for (let k = 1; k < 6; k++) g.fillRect(1.5 + k * c - .5, 1.5, 1, H - 3);   // uniones entre coches
+    g.fillStyle = VENTANAS; for (let k = 0; k < 6; k++) g.fillRect(1.5 + k * c + 2, 3.5, c - 4, H - 7);
+    g.fillStyle = OSCURO; g.fillRect(2.5, 3, 1.4, H - 6); g.fillRect(W - 3.9, 3, 1.4, H - 6); }},   // parabrisas
+  segunda:{w:38, h:12, dibujar(g, W, H){
+    g.fillStyle = OSCURO; rr(g, 0, 0, W, H, 2); g.fill();
+    g.fillStyle = '#F2F2F2'; rr(g, 1.5, 1.5, W - 3, H - 3, 1.2); g.fill();
+    g.fillStyle = VENTANAS; g.fillRect(6.5, 4.5, W - 13, H - 9);
+    g.fillStyle = OSCURO; g.fillRect(2.5, 2.5, 2.4, H - 5); g.fillRect(W - 4.9, 2.5, 2.4, H - 5); }},
+  hitachi:{w:40, h:11, dibujar(g, W, H){
+    const r = (H - 3) / 2;
+    g.fillStyle = OSCURO; rr(g, 0, 0, W, H, H / 2); g.fill();
+    g.fillStyle = '#D9DCE1'; rr(g, 1.5, 1.5, W - 3, H - 3, r); g.fill();
+    g.fillStyle = OSCURO; rr(g, 1.5, 1.5, 6, H - 3, [r, 0, 0, r]); g.fill(); rr(g, W - 7.5, 1.5, 6, H - 3, [0, r, r, 0]); g.fill();   // frentes panorámicos
+    g.fillStyle = VENTANAS; g.fillRect(10, 4.2, W - 20, H - 8.4); }},
+};
+function rr(g, x, y, w, h, r){
+  g.beginPath();
+  if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h);   // iOS 15: esquinas rectas
+}
+function dibujarTren(modelo){
+  const m = MODELOS_TREN[modelo], k = 2, cv = document.createElement('canvas'); cv.width = m.w * k; cv.height = m.h * k;
+  const g = cv.getContext('2d'); g.scale(k, k); m.dibujar(g, m.w, m.h);
   return {width:cv.width, height:cv.height, data:g.getImageData(0, 0, cv.width, cv.height).data};
+}
+/** El modelo de cada tren que sale: en la L1, 1 de cada 9 es del otro modelo (5 de 44 en la flota real). */
+function modeloNuevo(lt){
+  lt.salidos = (lt.salidos || 0) + 1;
+  return lt.l.id === 'L2' ? 'hitachi' : lt.salidos % 9 === 4 ? 'segunda' : 'alstom';
 }
 function ponerTrenes(){
   lineasTren.forEach(repartir);
-  map.addImage('tren', dibujarTren('#F2F2F2'), {pixelRatio:2});
+  for (const m of Object.keys(MODELOS_TREN)) map.addImage('tren-' + m, dibujarTren(m), {pixelRatio:2});
   map.addSource('trenes', {type:'geojson', data:trenesGeo()});
   map.addSource('estelas', {type:'geojson', lineMetrics:true, data:{type:'FeatureCollection', features:[]}});
   // en su carril, igual que el tren (icon-offset 8 × icon-size); se desvanece hacia la cola
@@ -1018,7 +1047,7 @@ function ponerTrenes(){
         'line-offset':['interpolate', ['linear'], ['zoom'], 10, 4, 13, 6.8, 15, 9.6],
         'line-gradient':['interpolate', ['linear'], ['line-progress'], 0, 'rgba(242,242,242,0)', 1, 'rgba(242,242,242,.8)']}}, 'est-nombre');
   map.addLayer({id:'trenes', type:'symbol', source:'trenes',
-    layout:{'icon-image':'tren', 'icon-rotate':['-', ['get','rumbo'], 90], 'icon-rotation-alignment':'map',
+    layout:{'icon-image':['concat', 'tren-', ['get','modelo']], 'icon-rotate':['-', ['get','rumbo'], 90], 'icon-rotation-alignment':'map',
       'icon-size':['interpolate', ['linear'], ['zoom'], 10, .5, 13, .85, 15, 1.2], 'icon-allow-overlap':true,
       'icon-offset':[0, 8], 'icon-ignore-placement':true},   // offset: cada sentido por su carril, a la derecha de hacia donde va
     paint:{'icon-opacity':['case', ['==', ['get','estado'], 'sin_servicio'], .55, 1]}}, 'est-nombre');
