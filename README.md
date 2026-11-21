@@ -38,7 +38,9 @@ la información viene de usuarios y siempre se muestra como tal.
   sin servicio → dan la vuelta; no paran en estaciones cerradas. Cada tren en marcha lleva una estela cuyo largo
   indica su velocidad (parado: sin estela). Cada modelo tiene su silueta, en blancos y grises (el color es solo
   para el estado): en la L1 el Alstom con sus 6 coches y el otro modelo de puntas cuadradas (1 de cada 9, como
-  en la flota); en la L2 el tren automático, sin cabina. Al tocar uno invita a reportar. Datos en `SERVICIO`
+  en la flota); en la L2 el tren automático, sin cabina. Con toda la línea en pantalla son pastillas chicas, sin
+  estela y sin toque (así se ven la vía y las estaciones, y tocar la vía elige el tramo); al acercar crecen, aparece
+  la estela y al tocar uno invita a reportar. Datos en `SERVICIO`
   (`index.html`).
 - Paleta: el color solo aparece cuando hay algo que mirar. Normal es blanco; lento, ámbar;
   detenido, coral; sin servicio, acero; sin reportes, grafito.

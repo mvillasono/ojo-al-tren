@@ -829,7 +829,7 @@ if (GL) {
         'text-padding':2, 'text-optional':true},
       paint:{'text-color':['case', ['any', cerr, dudaE], ROJO, '#C9C9CE'], 'text-halo-color':'rgba(10,10,11,.95)', 'text-halo-width':1.6}});
     for (const l of ['via', 'via-dudosa', 'via-halo']) {
-      map.on('click', l, e => { if (map.getLayer('trenes') && map.queryRenderedFeatures(e.point, {layers:['trenes']}).length) return;   // tocó el tren
+      map.on('click', l, e => { if (trenEn(e.point)) return;   // tocó el tren
         elegirTramo(e.features[0].properties.id); });
       map.on('mouseenter', l, () => map.getCanvas().style.cursor = 'pointer');
       map.on('mouseleave', l, () => map.getCanvas().style.cursor = '');
@@ -986,7 +986,13 @@ function puntoEn(lt, d){
 }
 /* La estela: a velocidad real el tren casi no avanza en pantalla, así que detrás de cada uno se dibuja una estela
    que dice hacia dónde va y qué tan rápido (largo en píxeles proporcional a la velocidad). Parado: sin estela. */
+/* Tamaño del tren según el zoom: con toda la línea en pantalla son pastillas chicas (en el celular, 38 trenes
+   grandes tapaban la vía y las estaciones); al acercar crecen hasta la silueta completa. La estela aparece desde el
+   zoom 11,5 (ESTELA_DESDE). El carril (8 px a la derecha de la marcha) escala con el tren. */
+const TAMANO_TREN = [[10, .3], [11.5, .42], [13, .85], [15, 1.2]], ESTELA_DESDE = 11.5;
+const porZoom = f => ['interpolate', ['linear'], ['zoom'], ...TAMANO_TREN.flatMap(([z, t]) => [z, f(t)])];
 function estelasGeo(){
+  if (map.getZoom() < ESTELA_DESDE) return {type:'FeatureCollection', features:[]};   // de lejos no se dibujan
   const z = map.getZoom(), px = 40 + 10 * (Math.min(14, Math.max(10, z)) - 10);   // a toda velocidad: 40 px de lejos, 80 de cerca
   const mPorPx = 40075016.686 * Math.cos(-12.1 * Math.PI / 180) / (512 * 2 ** z);
   return {type:'FeatureCollection', features:lineasTren.flatMap(lt => lt.trenes.filter(tr => tr.v > .5 && !(tr.espera > 0)).map(tr => {
@@ -1036,31 +1042,40 @@ function modeloNuevo(lt){
   lt.salidos = (lt.salidos || 0) + 1;
   return lt.l.id === 'L2' ? 'hitachi' : lt.salidos % 9 === 4 ? 'segunda' : 'alstom';
 }
+/** El tren bajo el dedo, con 6 px de margen. De lejos no se tocan: los trenes cubren casi toda la vía y tocarla
+    para ver un tramo es lo principal; desde el zoom en que aparece la estela, sí. */
+function trenEn(p){
+  if (!map.getLayer('trenes') || map.getZoom() < ESTELA_DESDE) return null;
+  const M = 6;
+  return map.queryRenderedFeatures([[p.x - M, p.y - M], [p.x + M, p.y + M]], {layers:['trenes']})[0] || null;
+}
 function ponerTrenes(){
   lineasTren.forEach(repartir);
   for (const m of Object.keys(MODELOS_TREN)) map.addImage('tren-' + m, dibujarTren(m), {pixelRatio:2});
   map.addSource('trenes', {type:'geojson', data:trenesGeo()});
   map.addSource('estelas', {type:'geojson', lineMetrics:true, data:{type:'FeatureCollection', features:[]}});
   // en su carril, igual que el tren (icon-offset 8 × icon-size); se desvanece hacia la cola
-  map.addLayer({id:'estela', type:'line', source:'estelas', layout:{'line-cap':'round'},
-      paint:{'line-width':['interpolate', ['linear'], ['zoom'], 10, 3, 15, 6],
-        'line-offset':['interpolate', ['linear'], ['zoom'], 10, 4, 13, 6.8, 15, 9.6],
+  map.addLayer({id:'estela', type:'line', source:'estelas', minzoom:ESTELA_DESDE, layout:{'line-cap':'round'},
+      paint:{'line-width':['interpolate', ['linear'], ['zoom'], ESTELA_DESDE, 3, 15, 6],
+        'line-opacity':['interpolate', ['linear'], ['zoom'], ESTELA_DESDE, 0, ESTELA_DESDE + .8, 1],   // aparece de a poco
+        'line-offset':porZoom(t => 8 * t),
         'line-gradient':['interpolate', ['linear'], ['line-progress'], 0, 'rgba(242,242,242,0)', 1, 'rgba(242,242,242,.8)']}}, 'est-nombre');
   map.addLayer({id:'trenes', type:'symbol', source:'trenes',
     layout:{'icon-image':['concat', 'tren-', ['get','modelo']], 'icon-rotate':['-', ['get','rumbo'], 90], 'icon-rotation-alignment':'map',
-      'icon-size':['interpolate', ['linear'], ['zoom'], 10, .5, 13, .85, 15, 1.2], 'icon-allow-overlap':true,
+      'icon-size':porZoom(t => t), 'icon-allow-overlap':true,
       'icon-offset':[0, 8], 'icon-ignore-placement':true},   // offset: cada sentido por su carril, a la derecha de hacia donde va
     paint:{'icon-opacity':['case', ['==', ['get','estado'], 'sin_servicio'], .55, 1]}}, 'est-nombre');
   const pop = new GL.Popup({closeButton:false, className:'pop-tren', offset:12, maxWidth:'250px'});
-  map.on('click', 'trenes', e => {
-    const l = LINEA[e.features[0].properties.linea], s = e.features[0].properties.estado;
+  map.on('click', e => {
+    const f = trenEn(e.point); if (!f) return;
+    const l = LINEA[f.properties.linea], s = f.properties.estado;
     // corto: lo que importa es que no es su ubicación real (y, si hay problema, por qué va así)
     const marcha = s === 'lento' ? 'Va lento porque así lo reportan. ' : s === 'detenido' ? 'Parado: reportan el tren detenido. ' : '';
     pop.setLngLat(e.lngLat).setHTML(`<b>${l.id}</b><p>${marcha}Ilustrativo: no es la ubicación real del tren.</p>
       <button type="button" class="btn" data-reportar-tren>¿Vas en el tren? Reportar</button>`).addTo(map);
     pop.getElement().querySelector('[data-reportar-tren]').addEventListener('click', () => { pop.remove(); abrirReporte(); });
   });
-  map.on('mouseenter', 'trenes', () => map.getCanvas().style.cursor = 'pointer');
+  map.on('mouseenter', 'trenes', () => { if (map.getZoom() >= ESTELA_DESDE) map.getCanvas().style.cursor = 'pointer'; });
   map.on('mouseleave', 'trenes', () => map.getCanvas().style.cursor = '');
   if (matchMedia('(prefers-reduced-motion:reduce)').matches) return;   // sin animación: los trenes quedan quietos
   let antes = performance.now(), cuenta = 0;
