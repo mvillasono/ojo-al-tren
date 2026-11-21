@@ -30,6 +30,14 @@ la información viene de usuarios y siempre se muestra como tal.
     El id anónimo del navegador y la IP se guardan como hash (el de la IP cambia cada día).
   - **Anti-spam**: 1 reporte por tramo por minuto y 15 por hora por navegador; 60 por hora por red.
   - **Sin señal** (pasa en el tren): el reporte queda en el celular y se envía cuando vuelve la conexión.
+- En el mapa corren **trenes ilustrativos** (no son su posición real), **a velocidad real**: aceleran, frenan y paran
+  en cada estación, calibrados para que el viaje dure lo que dura (L1 Villa El Salvador–Bayóvar en 54 min; L2 tramo 1A
+  en 7 min). Cuántos: los que cubren la frecuencia de esa hora en Lima, sin pasar de la flota (L1: 44 trenes, cada
+  3 min en punta y hasta 10 en valle, según la ATU; L2: 5 trenes); fuera de horario, ninguno. Con los reportes
+  confirmados: lento → a un tercio; detenido → se paran y los que llegan esperan en fila en la estación anterior;
+  sin servicio → dan la vuelta; no paran en estaciones cerradas. Cada tren en marcha lleva una estela cuyo largo
+  indica su velocidad (parado: sin estela). Al tocar uno invita a reportar. Datos en `SERVICIO`
+  (`index.html`).
 - Paleta: el color solo aparece cuando hay algo que mirar. Normal es blanco; lento, ámbar;
   detenido, coral; sin servicio, acero; sin reportes, grafito.
 

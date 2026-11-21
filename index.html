@@ -56,6 +56,13 @@
     font-family:Geist,system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
   button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
   a{color:inherit}
+  /* tarjeta al tocar el tren del mapa */
+  .pop-tren .maplibregl-popup-tip,.pop-tren .mapboxgl-popup-tip{display:none}
+  .pop-tren .maplibregl-popup-content,.pop-tren .mapboxgl-popup-content{background:var(--sup);color:var(--texto);border:1px solid var(--linea-2);
+    border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.4;box-shadow:0 8px 28px rgba(0,0,0,.5)}
+  .pop-tren b{font-family:"Geist Mono",monospace;font-size:12px;font-weight:500}
+  .pop-tren p{margin:6px 0 10px;color:var(--tenue)}
+  .pop-tren .btn{width:100%;height:36px;font-size:13px}
   :focus-visible{outline:2px solid var(--texto);outline-offset:2px}
   .sr{position:absolute!important;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   .mono{font-family:"Geist Mono",ui-monospace,Consolas,monospace;font-size:10.5px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:var(--tenue)}
@@ -822,11 +829,13 @@ if (GL) {
         'text-padding':2, 'text-optional':true},
       paint:{'text-color':['case', ['any', cerr, dudaE], ROJO, '#C9C9CE'], 'text-halo-color':'rgba(10,10,11,.95)', 'text-halo-width':1.6}});
     for (const l of ['via', 'via-dudosa', 'via-halo']) {
-      map.on('click', l, e => elegirTramo(e.features[0].properties.id));
+      map.on('click', l, e => { if (map.getLayer('trenes') && map.queryRenderedFeatures(e.point, {layers:['trenes']}).length) return;   // tocó el tren
+        elegirTramo(e.features[0].properties.id); });
       map.on('mouseenter', l, () => map.getCanvas().style.cursor = 'pointer');
       map.on('mouseleave', l, () => map.getCanvas().style.cursor = '');
     }
     pintar();
+    ponerTrenes();
     // el brillo rojo de los tramos detenidos late suavemente
     if (!matchMedia('(prefers-reduced-motion:reduce)').matches) {
       const t0 = performance.now();
@@ -836,7 +845,212 @@ if (GL) {
     }
   });
 }
+/* ---------- los trenes: ilustrativos (no son su posición real), a velocidad real ----------
+   Cuántos: los que hacen falta para cubrir la frecuencia de esa hora (vuelta completa ÷ intervalo), sin pasar de la
+   flota. Frecuencias aproximadas, en hora de Lima: Línea 1 según el cronograma de la ATU (mayo de 2026: cada 3 min en
+   punta y hasta 10 en valle; 44 trenes); Línea 2, solo el tramo 1A (5 trenes, cada 5 a 10 min). Fuera de horario, ninguno.
+   A qué velocidad: la real. Aceleran y frenan (1 m/s²), paran en cada estación y su velocidad de crucero se calcula para
+   que el viaje de punta a punta dure lo que dura de verdad: L1 Villa El Salvador–Bayóvar en 54 min; L2 Mercado Santa
+   Anita–Evitamiento en 7 min. Así un tramo largo tarda más que uno corto.
+   Con los reportes confirmados: lento → a un tercio de la velocidad; detenido → los que están en el tramo frenan y se
+   quedan, y los que llegan esperan en la estación anterior, uno detrás de otro; sin servicio → no entran: dan la vuelta
+   en la estación. Las estaciones cerradas se pasan sin parar. Entre trenes del mismo sentido hay siempre distancia. */
+const SERVICIO = {
+  // viaje: minutos de punta a punta · parada: segundos en cada estación · giro: minutos en la terminal
+  // franjas [desde, hasta, cada (min)] en horas de Lima · d: lunes a viernes · s: sábado · f: domingo (los feriados no se distinguen)
+  L1:{flota:44, viaje:54, parada:25, giro:3, d:[[5, 6.5, 6], [6.5, 9.25, 3], [9.25, 16.5, 6], [16.5, 20.5, 3], [20.5, 22, 8]],
+      s:[[5, 7, 7], [7, 20, 4.5], [20, 22, 8]], f:[[6, 7, 12], [7, 20, 8], [20, 22, 12]]},
+  L2:{flota:5, viaje:7, parada:20, giro:2, d:[[6, 6.5, 8], [6.5, 9.5, 5], [9.5, 17, 8], [17, 20.5, 5], [20.5, 22, 10]],
+      s:[[6, 22, 8]], f:[[6, 22, 10]]},
+};
+const TREN = {acel:1, lento:.33, distancia:500};   // m/s² (acelera y frena igual), fracción de la velocidad, metros
+let trenEstado = null;   // {porLinea, porLineaEst}: lo último que se pintó
+const metrosEntre = ([x1, y1], [x2, y2]) => { const k = Math.PI / 180, mx = (x2 - x1) * Math.cos((y1 + y2) / 2 * k);
+  return Math.hypot(mx, y2 - y1) * k * 6371e3; };
+function horaLima(){
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', {timeZone:'America/Lima', weekday:'short', hour:'numeric', minute:'numeric', hourCycle:'h23'})
+    .formatToParts(new Date()).map(x => [x.type, x.value]));
+  return {dia:p.weekday === 'Sun' ? 'f' : p.weekday === 'Sat' ? 's' : 'd', h:+p.hour + p.minute / 60};
+}
+/** La frecuencia de ahora y cuántos trenes la cubren (0 fuera de horario). */
+function servicioAhora(id){
+  const S = SERVICIO[id], {dia, h} = horaLima(), f = S[dia].find(([a, b]) => h >= a && h < b);
+  return f ? {cada:f[2], n:Math.min(S.flota, Math.round((2 * S.viaje + 2 * S.giro) / f[2]))} : {cada:null, n:0};
+}
+/** Segundos para recorrer D metros saliendo y llegando parado, con tope de velocidad v. */
+const tiempoTramo = (D, v, a) => D >= v * v / a ? D / v + v / a : 2 * Math.sqrt(D / a);
+// cada línea como un solo trazo con distancias acumuladas; cada tramo sabe dónde empieza y termina
+const lineasTren = red.lineas.map(l => {
+  const pts = [], cum = [], lim = [];
+  for (const t of l.tramos) {
+    const c = pts.length ? t.coords.slice(1) : t.coords;
+    const d0 = cum.length ? cum[cum.length - 1] : 0;
+    for (const p of c) { cum.push(pts.length ? cum[cum.length - 1] + metrosEntre(pts[pts.length - 1], p) : 0); pts.push(p); }
+    lim.push([d0, cum[cum.length - 1]]);
+  }
+  // la velocidad de crucero que hace que el viaje dure lo real (búsqueda binaria entre 5 y 40 m/s)
+  const S = SERVICIO[l.id], enMarcha = S.viaje * 60 - S.parada * (lim.length - 1);
+  let lo = 5, hi = 40;
+  for (let k = 0; k < 40; k++) { const v = (lo + hi) / 2;
+    if (lim.reduce((s, [a, b]) => s + tiempoTramo(b - a, v, TREN.acel), 0) > enMarcha) lo = v; else hi = v; }
+  return {l, S, pts, cum, lim, largo:cum[cum.length - 1], vmax:hi, trenes:[]};
+});
+/** Al abrir: los trenes repartidos parejo por la ida y la vuelta, ya en marcha. Después, salen o se retiran por las puntas. */
+function repartir(lt){
+  const n = servicioAhora(lt.l.id).n, ciclo = 2 * lt.largo;
+  lt.trenes = Array.from({length:n}, (_, k) => { const s = (k + .5) * ciclo / n;
+    return s < lt.largo ? {d:s, dir:1, v:lt.vmax * .7, espera:0} : {d:ciclo - s, dir:-1, v:lt.vmax * .7, espera:0}; });
+}
+function ajustarFlota(lt){
+  const n = servicioAhora(lt.l.id).n, activos = lt.trenes.filter(t => !t.retirar);
+  if (activos.length > n)   // sobran: se retiran los que están más cerca de llegar a su punta
+    activos.sort((a, b) => (a.dir > 0 ? lt.largo - a.d : a.d) - (b.dir > 0 ? lt.largo - b.d : b.d))
+      .slice(0, activos.length - n).forEach(t => t.retirar = true);
+  else if (activos.length < n)   // faltan: sale uno por la punta que esté libre
+    for (const [d, dir] of [[0, 1], [lt.largo, -1]])
+      if (!lt.trenes.some(t => t.dir === dir && Math.abs(t.d - d) < TREN.distancia)) { lt.trenes.push({d, dir, v:0, espera:lt.S.parada}); break; }
+}
+const estadoDe = (l, t) => { const e = trenEstado?.porLinea[l.id][t.id]; return e && e.nivel !== 'sin_confirmar' ? e.estado : null; };
+const bloqueado = s => s === 'detenido' || s === 'sin_servicio';
+const cerradaEst = (lt, id) => trenEstado?.porLineaEst[lt.l.id][id]?.estado === 'cerrada';
+const EPS = 1e-6;
+/** El tramo hacia el que va el tren (null: llegó a la punta). */
+function tramoAdelante(lt, tr){
+  const i = lt.lim.findIndex(([a, b]) => tr.dir > 0 ? tr.d >= a - EPS && tr.d < b - EPS : tr.d > a + EPS && tr.d <= b + EPS);
+  return i < 0 ? null : i;
+}
+/** Dónde va a parar: la próxima estación abierta, la punta o la estación antes de un tramo bloqueado. */
+function proximaParada(lt, tr, i){
+  for (let k = i; ; k += tr.dir) {
+    const fin = tr.dir > 0 ? lt.lim[k][1] : lt.lim[k][0], sig = k + tr.dir;
+    if (sig < 0 || sig >= lt.lim.length) return fin;
+    if (!cerradaEst(lt, tr.dir > 0 ? lt.l.tramos[k].hasta : lt.l.tramos[k].desde)) return fin;
+    if (bloqueado(estadoDe(lt.l, lt.l.tramos[sig]))) return fin;
+  }
+}
+/** Metros que puede avanzar sin acercarse demasiado al de adelante (mismo sentido). */
+function libre(lt, tr){
+  let m = Infinity;
+  for (const o of lt.trenes) if (o !== tr && o.dir === tr.dir) {
+    if (o.girar && (o.d < EPS || o.d > lt.largo - EPS)) continue;   // girando en la terminal: tiene dos andenes, no estorba
+    const x = tr.dir * (o.d - tr.d); if (x > 0 && x < m) m = x; }
+  return m - TREN.distancia;
+}
+function moverTren(lt, tr, dt){
+  if (tr.espera > 0) { tr.espera -= dt; return; }
+  if (tr.girar) {   // da la vuelta recién después de esperar: mientras espera, el que viene detrás no lo alcanza
+    // el otro andén de la terminal: si el que salió antes todavía está cerca, espera un poco más
+    if (lt.trenes.some(o => o !== tr && !o.girar && o.dir === -tr.dir && Math.abs(o.d - tr.d) < TREN.distancia)) { tr.espera = 5; return; }
+    tr.girar = false; tr.dir *= -1;
+    const j = tramoAdelante(lt, tr);
+    if (j !== null && estadoDe(lt.l, lt.l.tramos[j]) === 'sin_servicio') { tr.dir *= -1; tr.espera = lt.S.parada; }   // sin servicio a ambos lados: se queda
+    return;
+  }
+  const i = tramoAdelante(lt, tr);
+  if (i === null && tr.retirar) { lt.trenes.splice(lt.trenes.indexOf(tr), 1); return; }   // llegó a la punta y se guarda
+  const s = i === null ? null : estadoDe(lt.l, lt.l.tramos[i]);
+  const enEstacion = lt.lim.some(([a, b]) => Math.abs(tr.d - a) < EPS || Math.abs(tr.d - b) < EPS);
+  // en la punta o en una estación antes de un tramo sin servicio: espera y da la vuelta
+  if (i === null || (enEstacion && s === 'sin_servicio')) { tr.v = 0; tr.espera = i === null ? lt.S.giro * 60 : lt.S.parada; tr.girar = true; return; }
+  if (enEstacion && s === 'detenido') { tr.v = 0; return; }   // espera en la estación a que el tramo se libere
+  if (bloqueado(s)) {   // el tramo se bloqueó con el tren adentro: frena y se queda ahí
+    tr.v = Math.max(0, tr.v - TREN.acel * dt); tr.d += tr.dir * tr.v * dt; return;
+  }
+  const parada = proximaParada(lt, tr, i), aParada = Math.abs(parada - tr.d), resto = Math.min(aParada, libre(lt, tr));
+  if (resto <= 0) { tr.v = 0; return; }   // el de adelante está muy cerca: espera
+  // acelera hasta su velocidad (un tercio si va lento) y frena a tiempo para no pasarse
+  tr.v = Math.min(lt.vmax * (s === 'lento' ? TREN.lento : 1), tr.v + TREN.acel * dt, Math.sqrt(2 * TREN.acel * resto));
+  const paso = Math.min(tr.v * dt, resto);
+  tr.d += tr.dir * paso;
+  if (aParada - paso < .3) {   // llegó a la estación: abre puertas (en la punta, la vuelta la decide el próximo cuadro)
+    tr.d = parada; tr.v = 0;
+    if (tramoAdelante(lt, tr) !== null) tr.espera = lt.S.parada;
+  }
+}
+/** Dónde está el tren: punto, rumbo (grados desde el norte, hacia donde va) y el estado del tramo en el que va. */
+function posTren(lt, tr){
+  let k = lt.cum.findIndex(c => c >= tr.d); k = Math.max(1, k < 0 ? lt.cum.length - 1 : k);
+  const a = lt.pts[k - 1], b = lt.pts[k], f = (tr.d - lt.cum[k - 1]) / ((lt.cum[k] - lt.cum[k - 1]) || 1);
+  const rumbo = Math.atan2((b[0] - a[0]) * Math.cos(a[1] * Math.PI / 180), b[1] - a[1]) * 180 / Math.PI + (tr.dir < 0 ? 180 : 0);
+  const i = tramoAdelante(lt, tr) ?? (tr.dir > 0 ? lt.lim.length - 1 : 0);
+  return {punto:[a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], rumbo, estado:estadoDe(lt.l, lt.l.tramos[i]) || 'normal'};
+}
+const trenesGeo = () => ({type:'FeatureCollection', features:lineasTren.flatMap(lt => lt.trenes.map(tr => { const p = posTren(lt, tr);
+  return {type:'Feature', properties:{linea:lt.l.id, estado:p.estado, rumbo:p.rumbo}, geometry:{type:'Point', coordinates:p.punto}}; }))});
+/** Un punto del trazo a d metros del inicio. */
+function puntoEn(lt, d){
+  let k = lt.cum.findIndex(c => c >= d); k = Math.max(1, k < 0 ? lt.cum.length - 1 : k);
+  const a = lt.pts[k - 1], b = lt.pts[k], f = (d - lt.cum[k - 1]) / ((lt.cum[k] - lt.cum[k - 1]) || 1);
+  return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+}
+/* La estela: a velocidad real el tren casi no avanza en pantalla, así que detrás de cada uno se dibuja una estela
+   que dice hacia dónde va y qué tan rápido (largo en píxeles proporcional a la velocidad). Parado: sin estela. */
+function estelasGeo(){
+  const z = map.getZoom(), px = 40 + 10 * (Math.min(14, Math.max(10, z)) - 10);   // a toda velocidad: 40 px de lejos, 80 de cerca
+  const mPorPx = 40075016.686 * Math.cos(-12.1 * Math.PI / 180) / (512 * 2 ** z);
+  return {type:'FeatureCollection', features:lineasTren.flatMap(lt => lt.trenes.filter(tr => tr.v > .5 && !(tr.espera > 0)).map(tr => {
+    const largo = px * mPorPx * tr.v / lt.vmax, d0 = Math.min(lt.largo, Math.max(0, tr.d - tr.dir * largo));
+    const medio = lt.cum.map((c, k) => [c, k]).filter(([c]) => tr.dir > 0 ? c > d0 && c < tr.d : c < d0 && c > tr.d).map(([, k]) => lt.pts[k]);
+    if (tr.dir < 0) medio.reverse();   // de la cola a la cabeza, en el sentido de la marcha
+    return {type:'Feature', properties:{}, geometry:{type:'LineString', coordinates:[puntoEn(lt, d0), ...medio, puntoEn(lt, tr.d)]}};
+  }))};
+}
+/** El dibujo: un vagón rectangular visto desde arriba, con ventanas. Siempre blanco: el color del problema ya lo da la vía. */
+function dibujarTren(color){
+  const r = 2, W = 34, H = 12, cv = document.createElement('canvas'); cv.width = W * r; cv.height = H * r;
+  const g = cv.getContext('2d'); g.scale(r, r);
+  if (!g.roundRect) g.roundRect = function(x, y, w, h){ this.rect(x, y, w, h); };   // iOS 15: esquinas rectas
+  g.fillStyle = '#0A0A0B'; g.beginPath(); g.roundRect(0, 0, W, H, 5); g.fill();            // borde oscuro: se lee sobre la vía blanca
+  g.fillStyle = color; g.beginPath(); g.roundRect(1.5, 1.5, W - 3, H - 3, 4); g.fill();
+  g.fillStyle = 'rgba(10,10,11,.75)';
+  for (let x = 7; x < W - 8; x += 5) g.fillRect(x, 4, 3, H - 8);                          // ventanas
+  g.fillRect(3, 3.5, 2, H - 7); g.fillRect(W - 5, 3.5, 2, H - 7);                          // cabinas
+  return {width:cv.width, height:cv.height, data:g.getImageData(0, 0, cv.width, cv.height).data};
+}
+function ponerTrenes(){
+  lineasTren.forEach(repartir);
+  map.addImage('tren', dibujarTren('#F2F2F2'), {pixelRatio:2});
+  map.addSource('trenes', {type:'geojson', data:trenesGeo()});
+  map.addSource('estelas', {type:'geojson', lineMetrics:true, data:{type:'FeatureCollection', features:[]}});
+  // en su carril, igual que el tren (icon-offset 8 × icon-size); se desvanece hacia la cola
+  map.addLayer({id:'estela', type:'line', source:'estelas', layout:{'line-cap':'round'},
+      paint:{'line-width':['interpolate', ['linear'], ['zoom'], 10, 3, 15, 6],
+        'line-offset':['interpolate', ['linear'], ['zoom'], 10, 4, 13, 6.8, 15, 9.6],
+        'line-gradient':['interpolate', ['linear'], ['line-progress'], 0, 'rgba(242,242,242,0)', 1, 'rgba(242,242,242,.8)']}}, 'est-nombre');
+  map.addLayer({id:'trenes', type:'symbol', source:'trenes',
+    layout:{'icon-image':'tren', 'icon-rotate':['-', ['get','rumbo'], 90], 'icon-rotation-alignment':'map',
+      'icon-size':['interpolate', ['linear'], ['zoom'], 10, .5, 13, .85, 15, 1.2], 'icon-allow-overlap':true,
+      'icon-offset':[0, 8], 'icon-ignore-placement':true},   // offset: cada sentido por su carril, a la derecha de hacia donde va
+    paint:{'icon-opacity':['case', ['==', ['get','estado'], 'sin_servicio'], .55, 1]}}, 'est-nombre');
+  const pop = new GL.Popup({closeButton:false, className:'pop-tren', offset:12, maxWidth:'250px'});
+  map.on('click', 'trenes', e => {
+    const l = LINEA[e.features[0].properties.linea], s = e.features[0].properties.estado;
+    // corto: lo que importa es que no es su ubicación real (y, si hay problema, por qué va así)
+    const marcha = s === 'lento' ? 'Va lento porque así lo reportan. ' : s === 'detenido' ? 'Parado: reportan el tren detenido. ' : '';
+    pop.setLngLat(e.lngLat).setHTML(`<b>${l.id}</b><p>${marcha}Ilustrativo: no es la ubicación real del tren.</p>
+      <button type="button" class="btn" data-reportar-tren>¿Vas en el tren? Reportar</button>`).addTo(map);
+    pop.getElement().querySelector('[data-reportar-tren]').addEventListener('click', () => { pop.remove(); abrirReporte(); });
+  });
+  map.on('mouseenter', 'trenes', () => map.getCanvas().style.cursor = 'pointer');
+  map.on('mouseleave', 'trenes', () => map.getCanvas().style.cursor = '');
+  if (matchMedia('(prefers-reduced-motion:reduce)').matches) return;   // sin animación: los trenes quedan quietos
+  let antes = performance.now(), cuenta = 0;
+  const cuadro = t => {
+    // al volver a la pestaña, se pone al día (hasta 5 min) en pasos cortos
+    for (let falta = Math.min(300, (t - antes) / 1000); falta > 0; falta -= .1) {
+      const dt = Math.min(.1, falta);
+      if ((cuenta += dt) > 1) { cuenta = 0; lineasTren.forEach(ajustarFlota); }   // la frecuencia cambia con la hora
+      for (const lt of lineasTren) for (const tr of [...lt.trenes]) moverTren(lt, tr, dt);
+    }
+    antes = t;
+    map.getSource('estelas').setData(estelasGeo());
+    map.getSource('trenes').setData(trenesGeo());
+    requestAnimationFrame(cuadro);
+  };
+  requestAnimationFrame(cuadro);
+}
 function pintarMapa(porLinea, porLineaEst){
+  trenEstado = {porLinea, porLineaEst};
   const src = map && map.getSource && map.getSource('tramos'); if (!src) return;
   map.getSource('estaciones').setData({type:'FeatureCollection', features:red.lineas.flatMap(l => l.estaciones.map((e, i) => {
     const x = porLineaEst[l.id][e.id];
