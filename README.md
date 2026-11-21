@@ -36,7 +36,9 @@ la información viene de usuarios y siempre se muestra como tal.
   3 min en punta y hasta 10 en valle, según la ATU; L2: 5 trenes); fuera de horario, ninguno. Con los reportes
   confirmados: lento → a un tercio; detenido → se paran y los que llegan esperan en fila en la estación anterior;
   sin servicio → dan la vuelta; no paran en estaciones cerradas. Cada tren en marcha lleva una estela cuyo largo
-  indica su velocidad (parado: sin estela). Al tocar uno invita a reportar. Datos en `SERVICIO`
+  indica su velocidad (parado: sin estela). Cada modelo tiene su silueta, en blancos y grises (el color es solo
+  para el estado): en la L1 el Alstom con sus 6 coches y el otro modelo de puntas cuadradas (1 de cada 9, como
+  en la flota); en la L2 el tren automático, sin cabina. Al tocar uno invita a reportar. Datos en `SERVICIO`
   (`index.html`).
 - Paleta: el color solo aparece cuando hay algo que mirar. Normal es blanco; lento, ámbar;
   detenido, coral; sin servicio, acero; sin reportes, grafito.
